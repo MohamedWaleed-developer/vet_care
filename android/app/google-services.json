@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "project_number": "406602469270",
+    "project_id": "devloop-139of",
+    "storage_bucket": "devloop-139of.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:406602469270:android:3a979706314483d82597b7",
+        "android_client_info": {
+          "package_name": "com.example.devloop"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "406602469270-ldt8a4m448hovipnk2vfj1kn8b0b05ul.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBt7N0aWg2w6a0DGSodik8a2V9ze9pwARI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "406602469270-ldt8a4m448hovipnk2vfj1kn8b0b05ul.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:406602469270:android:e5cab40a6422d86a2597b7",
+        "android_client_info": {
+          "package_name": "com.example.vet_care"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "406602469270-ldt8a4m448hovipnk2vfj1kn8b0b05ul.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBt7N0aWg2w6a0DGSodik8a2V9ze9pwARI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "406602469270-ldt8a4m448hovipnk2vfj1kn8b0b05ul.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
