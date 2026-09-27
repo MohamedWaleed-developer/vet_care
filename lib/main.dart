@@ -6,6 +6,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'core/di/injection_container.dart';
 import 'core/services/notifications/notification_service.dart';
 import 'core/theme/app_theme.dart';
+import 'features/auth/presentation/screens/auth_view.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
@@ -50,11 +51,7 @@ class VetCareApp extends StatelessWidget {
               child: widget ?? const SizedBox.shrink(),
             );
           },
-          home: const Scaffold(
-            body: Center(
-              child: Text('Vet Care'),
-            ),
-          ),
+          home: SignUpScreen(),
         );
       },
     );
