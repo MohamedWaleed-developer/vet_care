@@ -5,7 +5,6 @@ import '../../models/animal_model.dart';
 // موديل التطعيمات
 import '../../models/vaccination_model.dart';
 
-
 // بنستورد Calculator القطط
 import 'cat_vaccination_calculator.dart';
 
@@ -17,7 +16,6 @@ import 'goat_vaccination_calculator.dart';
 
 // Calculator الأغنام
 import 'sheep_vaccination_calculator.dart';
-
 
 // ===========================================================
 // الكلاس الرئيسي
@@ -45,7 +43,6 @@ class VaccinationCalculator {
     // =======================================================
     switch (animal.category) {
 
-
     // -----------------------------------------------------
     // لو الحيوان قطة
     // -----------------------------------------------------
@@ -54,8 +51,10 @@ class VaccinationCalculator {
       // استخدم Calculator القطط
         return CatVaccinationCalculator.calculate(
 
-          // عمر القط بالأيام
-          ageInDays: animal.ageInDays,
+          // عمر القط
+          ageYears: animal.ageYears,
+          ageMonths: animal.ageMonths,
+          ageDays: animal.ageDays,
 
           // آخر تطعيم أساسي
           lastCoreDate: animal.lastCoreDate,
@@ -63,7 +62,6 @@ class VaccinationCalculator {
           // آخر سعار
           lastRabiesDate: animal.lastRabiesDate,
         );
-
 
     // -----------------------------------------------------
     // لو الحيوان كلب
@@ -74,7 +72,9 @@ class VaccinationCalculator {
         return DogVaccinationCalculator.calculate(
 
           // عمر الكلب
-          ageInDays: animal.ageInDays,
+          ageYears: animal.ageYears,
+          ageMonths: animal.ageMonths,
+          ageDays: animal.ageDays,
 
           // آخر تطعيم أساسي
           lastCoreDate: animal.lastCoreDate,
@@ -82,7 +82,6 @@ class VaccinationCalculator {
           // آخر سعار
           lastRabiesDate: animal.lastRabiesDate,
         );
-
 
     // -----------------------------------------------------
     // لو الحيوان ماعز
@@ -102,7 +101,6 @@ class VaccinationCalculator {
           lastMycoDate: animal.lastMycoDate,
         );
 
-
     // -----------------------------------------------------
     // لو الحيوان خروف
     // -----------------------------------------------------
@@ -112,10 +110,10 @@ class VaccinationCalculator {
         return SheepVaccinationCalculator.calculate(
 
           // آخر جدري
-          lastSmallpoxDate: animal.lastSmallpoxDate,
+            lastSmallpoxDate: animal.lastSmallpoxDate,
 
-          // آخر حمى قلاعية
-          lastFmdDate: animal.lastFmdDate,
+            // آخر حمى قلاعية
+            lastFmdDate: animal.lastFmdDate
         );
     }
   }
