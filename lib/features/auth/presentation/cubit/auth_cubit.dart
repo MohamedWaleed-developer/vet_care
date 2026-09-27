@@ -1,10 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:injectable/injectable.dart';
 
 import '../../data/models/user_model.dart';
 import '../../data/repositories/auth_repository.dart';
 import 'auth_state.dart';
 
+@injectable
 class AuthCubit extends Cubit<AuthState> {
   final AuthRepository repository;
   final FirebaseAuth firebaseAuth;
@@ -79,7 +81,7 @@ class AuthCubit extends Cubit<AuthState> {
         newPassword: newPassword,
         confirmNewPassword: confirmNewPassword,
       );
-      emit(PasswordChangedSuccess('تم تغيير كلمة المرور بنجاح.'));
+      emit(PasswordChangedSuccess('تم تغيير كلمة المرور بنجاح'));
     } catch (e) {
       emit(AuthError(e.toString()));
     }

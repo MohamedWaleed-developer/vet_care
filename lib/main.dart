@@ -1,11 +1,14 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'core/di/auth_injection.dart';
 import 'core/di/injection_container.dart';
 import 'core/services/notifications/notification_service.dart';
 import 'core/theme/app_theme.dart';
+import 'features/auth/presentation/cubit/auth_cubit.dart';
 import 'features/auth/presentation/screens/auth_view.dart';
 import 'firebase_options.dart';
 
@@ -17,6 +20,7 @@ Future<void> main() async {
   );
 
   await setupDependencies();
+  await configureDependencies(); // إضافة جديدة
 
   final notificationService = sl<NotificationService>();
 
@@ -51,7 +55,10 @@ class VetCareApp extends StatelessWidget {
               child: widget ?? const SizedBox.shrink(),
             );
           },
-          home: SignUpScreen(),
+          home: BlocProvider(
+            create: (_) => getIt<AuthCubit>()..checkCurrentUser(),
+            child: SignUpScreen(),
+          ),
         );
       },
     );

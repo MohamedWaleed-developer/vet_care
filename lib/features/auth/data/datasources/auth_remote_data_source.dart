@@ -1,7 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:injectable/injectable.dart';
 
 import '../models/user_model.dart';
 
+@lazySingleton
 class AuthRemoteDataSource {
   final FirebaseAuth firebaseAuth;
 
@@ -41,13 +43,14 @@ class AuthRemoteDataSource {
     await user.updateDisplayName(name.trim());
     await user.reload();
 
-    return UserModel.fromFirebaseUser(firebaseAuth.currentUser!, name: name.trim());
+    return UserModel.fromFirebaseUser(
+      firebaseAuth.currentUser!,
+      name: name.trim(),
+    );
   }
 
   Future<void> sendPasswordResetEmail({required String email}) async {
-    await firebaseAuth.sendPasswordResetEmail(
-      email: email.trim(),
-    );
+    await firebaseAuth.sendPasswordResetEmail(email: email.trim());
   }
 
   Future<void> updatePassword({
@@ -56,15 +59,16 @@ class AuthRemoteDataSource {
   }) async {
     final user = firebaseAuth.currentUser;
     if (user == null || user.email == null) {
-      throw Exception('المستخدم غير مسجل الدخول.');
+      throw Exception('لا يوجد مستخدم مسجل الدخول حالياً');
     }
 
+    // إعادة المصادقة قبل تغيير كلمة المرور (مطلوبة من فايربيز)
     final credential = EmailAuthProvider.credential(
       email: user.email!,
       password: currentPassword,
     );
-
     await user.reauthenticateWithCredential(credential);
+
     await user.updatePassword(newPassword);
   }
 

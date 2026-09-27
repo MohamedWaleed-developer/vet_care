@@ -1,6 +1,5 @@
 import '../../data/models/user_model.dart';
 
-
 abstract class AuthState {}
 
 class AuthInitial extends AuthState {}
