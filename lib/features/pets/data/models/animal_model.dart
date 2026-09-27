@@ -10,20 +10,17 @@ enum PetCategory {
   sheep,
 }
 
-enum CoreVaccineType {
-  none,
-  triple,
-  quadruple,
-  quintuple,
-  octuple,
-}
-
 class AnimalModel {
+  // ID الخاص بالحيوان في Firestore
+  final String id;
+
   final String name;
   final AnimalGender gender;
   final PetCategory category;
 
-  final int ageInDays;
+  final int ageYears;
+  final int ageMonths;
+  final int ageDays;
   final String breed;
 
   final int weightKg;
@@ -32,7 +29,6 @@ class AnimalModel {
   // Cats & Dogs
   final DateTime? lastRabiesDate;
   final DateTime? lastCoreDate;
-  final CoreVaccineType coreVaccineType;
 
   // Goats & Sheep
   final DateTime? lastSmallpoxDate;
@@ -42,16 +38,18 @@ class AnimalModel {
   final DateTime? lastMycoDate;
 
   AnimalModel({
+    this.id = '',
     required this.name,
     required this.gender,
     required this.category,
-    required this.ageInDays,
+    required this.ageYears,
+    required this.ageMonths,
+    required this.ageDays,
     required this.breed,
     required this.weightKg,
     required this.weightGrams,
     this.lastRabiesDate,
     this.lastCoreDate,
-    this.coreVaccineType = CoreVaccineType.none,
     this.lastSmallpoxDate,
     this.lastFmdDate,
     this.lastMycoDate,
