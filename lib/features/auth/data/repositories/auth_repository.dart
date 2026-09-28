@@ -1,7 +1,10 @@
+import 'package:injectable/injectable.dart';
+
 import '../../../../core/errors/auth_exception_handler.dart';
 import '../datasources/auth_remote_data_source.dart';
 import '../models/user_model.dart';
 
+@lazySingleton
 class AuthRepository {
   final AuthRemoteDataSource remoteDataSource;
 
