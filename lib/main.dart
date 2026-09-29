@@ -56,6 +56,7 @@ class VetCareApp extends StatelessWidget {
             );
           },
           home: BlocProvider(
+
             create: (_) => getIt<AuthCubit>()..checkCurrentUser(),
             child: SignUpScreen(),
           ),
