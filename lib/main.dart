@@ -1,36 +1,11 @@
-import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-
-import 'core/di/auth_injection.dart';
-import 'core/di/injection_container.dart';
-import 'core/services/notifications/notification_service.dart';
-import 'core/theme/app_theme.dart';
-import 'features/auth/presentation/cubit/auth_cubit.dart';
-import 'features/splash/presentation/views/splash_view.dart';
-import 'firebase_options.dart';
-
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-
-  await setupDependencies();
-  await configureDependencies(); // إضافة جديدة
-
-  final notificationService = sl<NotificationService>();
 
   await notificationService.initialize();
 
-  final token = await notificationService.getToken();
+final token = await notificationService.getToken();
 
-  debugPrint('FCM TOKEN: $token');
+debugPrint('FCM TOKEN: $token');
 
-  runApp(const VetCareApp());
+runApp(const VetCareApp());
 }
 
 class VetCareApp extends StatelessWidget {

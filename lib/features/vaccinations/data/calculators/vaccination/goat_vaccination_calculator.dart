@@ -1,7 +1,5 @@
-// موديل التطعيم
-import '../../models/vaccination_model.dart';
-
 // أدوات التاريخ
+import '../../models/vaccination_model.dart';
 import 'vaccination_date_helper.dart';
 
 // ===========================================================
@@ -10,6 +8,8 @@ import 'vaccination_date_helper.dart';
 class GoatVaccinationCalculator {
   // ---------------------------------------------------------
   // حساب جدول تطعيمات الماعز
+  //
+  // petId = ID الخاص بالماعز
   //
   // القواعد:
   //
@@ -22,6 +22,7 @@ class GoatVaccinationCalculator {
   // أقل فرق بين أي تطعيمين = 15 يوم
   // ---------------------------------------------------------
   static List<VaccinationModel> calculate({
+    required String petId,
     DateTime? lastSmallpoxDate,
     DateTime? lastFmdDate,
     DateTime? lastMycoDate,
@@ -51,6 +52,7 @@ class GoatVaccinationCalculator {
     schedule.add(
       VaccinationModel(
         id: 'vac_g_sp',
+        petId: petId,
         vaccineName: 'تطعيم الجدري',
         dueDate: adjustedSmallpox,
       ),
@@ -78,6 +80,7 @@ class GoatVaccinationCalculator {
     schedule.add(
       VaccinationModel(
         id: 'vac_g_fmd',
+        petId: petId,
         vaccineName: 'تطعيم الحمى القلاعية',
         dueDate: adjustedFmd,
       ),
@@ -105,6 +108,7 @@ class GoatVaccinationCalculator {
     schedule.add(
       VaccinationModel(
         id: 'vac_g_myco',
+        petId: petId,
         vaccineName: 'تطعيم المايكوبلازما (أبو الرمح)',
         dueDate: adjustedMyco,
       ),
@@ -116,6 +120,7 @@ class GoatVaccinationCalculator {
 
     _addSeasonalVaccines(
       schedule,
+      petId: petId,
       gapDays: 15,
     );
 
@@ -135,6 +140,7 @@ class GoatVaccinationCalculator {
   // ===========================================================
   static void _addSeasonalVaccines(
       List<VaccinationModel> schedule, {
+        required String petId,
         required int gapDays,
       }) {
     final DateTime now = DateTime.now();
@@ -165,6 +171,7 @@ class GoatVaccinationCalculator {
     schedule.add(
       VaccinationModel(
         id: 'vac_g_june_${juneDate.millisecondsSinceEpoch}',
+        petId: petId,
         vaccineName: 'تطعيم معوي (موسمي)',
         dueDate: juneDate,
       ),
@@ -196,6 +203,7 @@ class GoatVaccinationCalculator {
     schedule.add(
       VaccinationModel(
         id: 'vac_g_march_${marchDate.millisecondsSinceEpoch}',
+        petId: petId,
         vaccineName: 'تطعيم دموي وطاعون (موسمي)',
         dueDate: marchDate,
       ),

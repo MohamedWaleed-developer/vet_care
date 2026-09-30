@@ -11,6 +11,7 @@ class AuthCubit extends Cubit<AuthState> {
   final AuthRepository repository;
   final FirebaseAuth firebaseAuth;
 
+feature/auth
   AuthCubit(
       this.repository,
       this.firebaseAuth,
@@ -25,15 +26,27 @@ class AuthCubit extends Cubit<AuthState> {
           UserModel.fromFirebaseUser(user),
         ),
       );
+
+  AuthCubit(this.repository, this.firebaseAuth) : super(AuthInitial());
+
+  void checkCurrentUser() {
+    final user = firebaseAuth.currentUser;
+    if (user != null) {
+      emit(AuthSuccess(UserModel.fromFirebaseUser(user)));
+ development
     } else {
       emit(AuthUnauthenticated());
     }
   }
 
+ feature/auth
   Future<void> login(
       String email,
       String password,
       ) async {
+
+  Future<void> login(String email, String password) async {
+ development
     emit(AuthLoading());
 
     try {
@@ -41,7 +54,10 @@ class AuthCubit extends Cubit<AuthState> {
         email: email,
         password: password,
       );
+ feature/auth
 
+
+ development
       emit(AuthSuccess(user));
     } catch (e) {
       emit(AuthError(e.toString()));
@@ -63,13 +79,16 @@ class AuthCubit extends Cubit<AuthState> {
         password: password,
         confirmPassword: confirmPassword,
       );
+feature/auth
 
+ development
       emit(AuthSuccess(user));
     } catch (e) {
       emit(AuthError(e.toString()));
     }
   }
 
+ feature/auth
   Future<void> sendPasswordResetEmail(
       String email,
       ) async {
@@ -87,6 +106,16 @@ class AuthCubit extends Cubit<AuthState> {
       emit(
         AuthError(e.toString()),
       );
+
+  Future<void> sendPasswordResetEmail(String email) async {
+    emit(AuthLoading());
+
+    try {
+      await repository.sendPasswordResetEmail(email: email);
+      emit(PasswordResetEmailSent(email));
+    } catch (e) {
+      emit(AuthError(e.toString()));
+ development
     }
   }
 
@@ -103,6 +132,7 @@ class AuthCubit extends Cubit<AuthState> {
         newPassword: newPassword,
         confirmNewPassword: confirmNewPassword,
       );
+ feature/auth
 
       emit(
         PasswordChangedSuccess(
@@ -113,6 +143,11 @@ class AuthCubit extends Cubit<AuthState> {
       emit(
         AuthError(e.toString()),
       );
+
+      emit(PasswordChangedSuccess('تم تغيير كلمة المرور بنجاح'));
+    } catch (e) {
+      emit(AuthError(e.toString()));
+ development
     }
   }
 
@@ -120,7 +155,7 @@ class AuthCubit extends Cubit<AuthState> {
     emit(AuthLoading());
 
     try {
-      await repository.logout();
+      await repository.logout(); feature/auth
 
       emit(
         AuthUnauthenticated(),
@@ -129,6 +164,11 @@ class AuthCubit extends Cubit<AuthState> {
       emit(
         AuthError(e.toString()),
       );
+
+      emit(AuthUnauthenticated());
+    } catch (e) {
+      emit(AuthError(e.toString()));
+ development
     }
   }
 }
