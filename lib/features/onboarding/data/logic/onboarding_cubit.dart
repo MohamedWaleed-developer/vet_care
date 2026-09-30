@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../../auth/presentation/screens/login_screen.dart';
+
 import '../models/onboarding_model.dart';
 import 'onboarding_state.dart';
 
@@ -33,14 +37,16 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     );
   }
 
-  void navigateToAuth(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'الانتقال إلى شاشة تسجيل الدخول / إنشاء الحساب',
-          textAlign: TextAlign.center,
-        ),
-        duration: Duration(seconds: 2),
+  Future<void> navigateToAuth(BuildContext context) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('seenOnboarding', true);
+
+    if (!context.mounted) return;
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const LoginScreen(),
       ),
     );
   }

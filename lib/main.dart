@@ -20,7 +20,7 @@ Future<void> main() async {
   );
 
   await setupDependencies();
-  await configureDependencies(); // إضافة جديدة
+  await configureDependencies();
 
   final notificationService = sl<NotificationService>();
 
@@ -38,29 +38,33 @@ class VetCareApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ScreenUtilInit(
-      designSize: const Size(390, 844),
-      minTextAdapt: true,
-      splitScreenMode: true,
-      builder: (context, child) {
-        return MaterialApp(
-          debugShowCheckedModeBanner: false,
-          title: 'Vet Care',
-          theme: AppTheme.lightTheme,
-          builder: (context, widget) {
-            return MediaQuery(
-              data: MediaQuery.of(context).copyWith(
-                textScaler: TextScaler.noScaling,
-              ),
-              child: widget ?? const SizedBox.shrink(),
-            );
-          },
-          home: BlocProvider(
-            create: (_) => getIt<AuthCubit>()..checkCurrentUser(),
-            child: SplashScreen(),
-          ),
-        );
-      },
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<AuthCubit>(
+          create: (_) => getIt<AuthCubit>()..checkCurrentUser(),
+        ),
+      ],
+      child: ScreenUtilInit(
+        designSize: const Size(390, 844),
+        minTextAdapt: true,
+        splitScreenMode: true,
+        builder: (context, child) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            title: 'Vet Care',
+            theme: AppTheme.lightTheme,
+            builder: (context, widget) {
+              return MediaQuery(
+                data: MediaQuery.of(context).copyWith(
+                  textScaler: TextScaler.noScaling,
+                ),
+                child: widget ?? const SizedBox.shrink(),
+              );
+            },
+            home: const SplashScreen(),
+          );
+        },
+      ),
     );
   }
 }

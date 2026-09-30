@@ -1,10 +1,11 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../auth/presentation/screens/HomeScreen.dart';
 import '../../../auth/presentation/screens/login_screen.dart';
-
-/// المسار:
-/// lib/features/splash/presentation/screens/splash_screen.dart
+import '../../../onboarding/presentation/screens/onboarding_screen.dart';
 
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
@@ -19,6 +20,31 @@ class SplashScreen extends StatelessWidget {
   /// حجم الصورة
   static const double _logoWidthFactor = 0.9;
   static const double _logoMaxWidth = 420;
+
+  /// بيقرر الوجهة حسب حالة المستخدم
+  Future<void> _navigate(BuildContext context) async {
+    final prefs = await SharedPreferences.getInstance();
+    final seenOnboarding = prefs.getBool('seenOnboarding') ?? false;
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (!context.mounted) return;
+
+    Widget next;
+    if (user != null) {
+      // مسجل دخول -> الهوم مباشرة
+      next = const Homescreen();
+    } else if (!seenOnboarding) {
+      // مستخدم جديد -> أونبوردينج
+      next = const OnboardingScreen();
+    } else {
+      // شاف الأونبوردينج ومش مسجل -> لوجين
+      next = const LoginScreen();
+    }
+
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => next),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -130,13 +156,7 @@ class SplashScreen extends StatelessWidget {
                     // =========================
 
                     _StartButton(
-                      onPressed: () {
-                        Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(
-                            builder: (_) => const LoginScreen(),
-                          ),
-                        );
-                      },
+                      onPressed: () => _navigate(context),
                     ),
 
                     const SizedBox(height: 34),
