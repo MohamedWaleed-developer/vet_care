@@ -1,13 +1,17 @@
-// موديل التطعيم
-import '../../models/vaccination_model.dart';
+// Calculator خاص بالقطط فقط
 
-// أدوات التعامل مع التواريخ
+import '../../models/vaccination_model.dart';
 import 'vaccination_date_helper.dart';
 
-// Calculator خاص بالكلاب
-class DogVaccinationCalculator {
-  // الدالة الرئيسية لحساب جدول تطعيمات الكلب
+class CatVaccinationCalculator {
+  // ---------------------------------------------------------
+  // الدالة الرئيسية لحساب جدول تطعيمات القط
+  //
+  // petId = ID الخاص بالحيوان
+  // العمر = سنين + شهور + أيام
+  // ---------------------------------------------------------
   static List<VaccinationModel> calculate({
+    required String petId,
     required int ageYears,
     required int ageMonths,
     required int ageDays,
@@ -23,63 +27,68 @@ class DogVaccinationCalculator {
             (ageMonths * 30) +
             ageDays;
 
-    // قائمة التطعيمات المطلوبة
+    // القائمة اللي هنحط فيها التطعيمات المطلوبة
     final List<VaccinationModel> schedule = [];
 
     // تاريخ اليوم
     final DateTime now = DateTime.now();
 
     // =========================================================
-    // التطعيم الأساسي Core Vaccine
+    // أولاً: التطعيم الأساسي Core Vaccine
     // =========================================================
 
-    // لو مفيش تطعيم أساسي سابق
+    // لو مفيش تاريخ تطعيم أساسي سابق
     if (lastCoreDate == null) {
       // -------------------------------------------------------
-      // من 60 إلى 75 يوم
+      // من عمر شهرين إلى 4 شهور
+      // 60 يوم إلى 120 يوم
       // -------------------------------------------------------
-      if (ageInDays >= 60 && ageInDays <= 75) {
-        // التطعيم الأول: رباعي
+      if (ageInDays >= 60 && ageInDays <= 120) {
+        // الجرعة الأولى: التطعيم الثلاثي
         schedule.add(
           VaccinationModel(
-            id: 'vac_d1',
-            vaccineName: 'التطعيم الرباعي',
+            id: 'vac_c1',
+            petId: petId,
+            vaccineName: 'التطعيم الثلاثي',
             dueDate: now,
           ),
         );
 
-        // الجرعة التنشيطية بعد 20 يوم
+        // الجرعة التنشيطية بعد 21 يوم
         schedule.add(
           VaccinationModel(
-            id: 'vac_d2',
-            vaccineName: 'جرعة تنشيطية (رباعي)',
+            id: 'vac_c2',
+            petId: petId,
+            vaccineName: 'جرعة تنشيطية (ثلاثي)',
             dueDate: now.add(
-              const Duration(days: 20),
+              const Duration(days: 21),
             ),
           ),
         );
       }
 
       // -------------------------------------------------------
-      // أكبر من 75 يوم
+      // لو عمر القط أكبر من 4 شهور
       // -------------------------------------------------------
-      else if (ageInDays > 75) {
-        // التطعيم الأساسي: خماسي / ثماني
+      else if (ageInDays > 120) {
+        // الجرعة الأولى: التطعيم الرباعي
         schedule.add(
           VaccinationModel(
-            id: 'vac_d3',
-            vaccineName: 'التطعيم الخماسي / الثماني',
+            id: 'vac_c3',
+            petId: petId,
+            vaccineName: 'التطعيم الرباعي',
             dueDate: now,
           ),
         );
 
-        // الجرعة التنشيطية بعد 20 يوم
+        // الجرعة التنشيطية بعد 21 يوم
         schedule.add(
           VaccinationModel(
-            id: 'vac_d4',
-            vaccineName: 'جرعة تنشيطية (خماسي / ثماني)',
+            id: 'vac_c4',
+            petId: petId,
+            vaccineName: 'جرعة تنشيطية (رباعي)',
             dueDate: now.add(
-              const Duration(days: 20),
+              const Duration(days: 21),
             ),
           ),
         );
@@ -87,58 +96,61 @@ class DogVaccinationCalculator {
     }
 
     // =========================================================
-    // لو عنده تطعيم أساسي سابق
+    // لو القط عنده تطعيم أساسي سابق
     // =========================================================
     else {
-      // التطعيم السنوي بعد سنة من آخر تطعيم أساسي
+      // التطعيم السنوي = بعد سنة من آخر تطعيم أساسي
       final DateTime nextCore =
       VaccinationDateHelper.addOneYear(lastCoreDate);
 
       // إضافة التطعيم السنوي
       schedule.add(
         VaccinationModel(
-          id: 'vac_d_annual',
-          vaccineName: 'التطعيم الأساسي السنوي',
+          id: 'vac_c_annual',
+          petId: petId,
+          vaccineName: 'التطعيم الرباعي السنوي',
           dueDate: nextCore,
         ),
       );
     }
 
     // =========================================================
-    // تطعيم السعار
+    // ثانياً: تطعيم السعار Rabies
     // =========================================================
 
     DateTime? rabiesDate;
 
-    // لو لم يأخذ السعار من قبل
+    // لو القط عمره ما أخد سعار
     if (lastRabiesDate == null) {
       // السعار يبدأ من عمر 3 شهور
+      // 3 شهور = 90 يوم
       if (ageInDays >= 90) {
         rabiesDate = now;
       }
     }
 
-    // لو أخده قبل كده
+    // لو القط أخد السعار قبل كده
     else {
-      // الموعد القادم بعد سنة
+      // موعد السعار القادم بعد سنة
       rabiesDate =
           VaccinationDateHelper.addOneYear(lastRabiesDate);
     }
 
-    // لو فيه موعد للسعار
+    // لو قدرنا نحدد موعد للسعار
     if (rabiesDate != null) {
-      // التأكد من وجود 20 يوم على الأقل
-      // بين السعار وأي تطعيم آخر
+      // التأكد إن السعار مش قريب من تطعيم تاني
+      // أقل فرق مسموح = 20 يوم
       rabiesDate = VaccinationDateHelper.adjustDateForGap(
         rabiesDate,
         schedule,
         gapDays: 20,
       );
 
-      // إضافة السعار للقائمة
+      // إضافة السعار
       schedule.add(
         VaccinationModel(
-          id: 'vac_d_rabies',
+          id: 'vac_c_rabies',
+          petId: petId,
           vaccineName: lastRabiesDate == null
               ? 'تطعيم السعار'
               : 'تطعيم السعار السنوي',
@@ -147,12 +159,14 @@ class DogVaccinationCalculator {
       );
     }
 
-    // ترتيب التطعيمات حسب التاريخ
+    // =========================================================
+    // ترتيب التطعيمات من الأقدم للأحدث
+    // =========================================================
     schedule.sort(
           (a, b) => a.dueDate.compareTo(b.dueDate),
     );
 
-    // إرجاع الجدول
+    // إرجاع جدول التطعيمات النهائي
     return schedule;
   }
 }

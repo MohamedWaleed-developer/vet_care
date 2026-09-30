@@ -1,11 +1,11 @@
 // بنستورد AnimalModel
 // علشان نستقبل بيانات الحيوان
-import '../../models/animal_model.dart';
+import '../../../../pets/data/models/animal_model.dart';
 
 // موديل التطعيمات
 import '../../models/vaccination_model.dart';
 
-// بنستورد Calculator القطط
+// Calculator القطط
 import 'cat_vaccination_calculator.dart';
 
 // Calculator الكلاب
@@ -22,34 +22,31 @@ import 'sheep_vaccination_calculator.dart';
 // ===========================================================
 //
 // بدل ما الشاشة تعرف كل Calculator لوحده
-// هي بس تستدعي VaccinationCalculator
+// هي بس تستدعي VaccinationCalculator.
 //
-// وهو يحدد الحيوان ويستخدم الـ Calculator المناسب.
+// وهو يحدد نوع الحيوان ويستخدم الـCalculator المناسب.
 // ===========================================================
 class VaccinationCalculator {
-
   // ---------------------------------------------------------
   // الدالة اللي هنستخدمها من بره
   //
   // بتاخد AnimalModel كامل
-  // وترجع List من التطعيمات المطلوبة
+  // وترجع List من التطعيمات المطلوبة.
   // ---------------------------------------------------------
   static List<VaccinationModel> calculateForAnimal(
       AnimalModel animal,
       ) {
-
     // =======================================================
     // switch بتشوف نوع الحيوان
     // =======================================================
     switch (animal.category) {
-
     // -----------------------------------------------------
     // لو الحيوان قطة
     // -----------------------------------------------------
       case PetCategory.cat:
-
-      // استخدم Calculator القطط
         return CatVaccinationCalculator.calculate(
+          // ID الخاص بالقط
+          petId: animal.id,
 
           // عمر القط
           ageYears: animal.ageYears,
@@ -67,9 +64,9 @@ class VaccinationCalculator {
     // لو الحيوان كلب
     // -----------------------------------------------------
       case PetCategory.dog:
-
-      // استخدم Calculator الكلاب
         return DogVaccinationCalculator.calculate(
+          // ID الخاص بالكلب
+          petId: animal.id,
 
           // عمر الكلب
           ageYears: animal.ageYears,
@@ -87,9 +84,9 @@ class VaccinationCalculator {
     // لو الحيوان ماعز
     // -----------------------------------------------------
       case PetCategory.goat:
-
-      // استخدم Calculator الماعز
         return GoatVaccinationCalculator.calculate(
+          // ID الخاص بالماعز
+          petId: animal.id,
 
           // آخر جدري
           lastSmallpoxDate: animal.lastSmallpoxDate,
@@ -105,15 +102,15 @@ class VaccinationCalculator {
     // لو الحيوان خروف
     // -----------------------------------------------------
       case PetCategory.sheep:
-
-      // استخدم Calculator الأغنام
         return SheepVaccinationCalculator.calculate(
+          // ID الخاص بالخروف
+          petId: animal.id,
 
           // آخر جدري
-            lastSmallpoxDate: animal.lastSmallpoxDate,
+          lastSmallpoxDate: animal.lastSmallpoxDate,
 
-            // آخر حمى قلاعية
-            lastFmdDate: animal.lastFmdDate
+          // آخر حمى قلاعية
+          lastFmdDate: animal.lastFmdDate,
         );
     }
   }

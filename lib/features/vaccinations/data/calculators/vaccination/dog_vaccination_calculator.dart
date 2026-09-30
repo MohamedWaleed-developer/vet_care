@@ -1,28 +1,22 @@
-// موديل التطعيم
+// أدوات التعامل مع التواريخ
 import '../../models/vaccination_model.dart';
-
-// الدوال المساعدة الخاصة بالتواريخ
 import 'vaccination_date_helper.dart';
 
-// Calculator خاص بالقطط فقط
-class CatVaccinationCalculator {
-
+// Calculator خاص بالكلاب
+class DogVaccinationCalculator {
   // ---------------------------------------------------------
-  // الدالة الرئيسية لحساب جدول تطعيمات القط
-  //
-  // العمر بيتبعت:
-  // سنين + شهور + أيام
-  //
-  // وبنحوّله هنا لأيام علشان نحسب أعمار التطعيمات.
+  // الدالة الرئيسية لحساب جدول تطعيمات الكلب
   // ---------------------------------------------------------
   static List<VaccinationModel> calculate({
+    // ID الخاص بالحيوان
+    required String petId,
+
     required int ageYears,
     required int ageMonths,
     required int ageDays,
     DateTime? lastCoreDate,
     DateTime? lastRabiesDate,
   }) {
-
     // تحويل العمر إلى أيام
     //
     // السنة = 365 يوم
@@ -32,67 +26,67 @@ class CatVaccinationCalculator {
             (ageMonths * 30) +
             ageDays;
 
-    // القائمة اللي هنحط فيها التطعيمات المطلوبة
+    // قائمة التطعيمات المطلوبة
     final List<VaccinationModel> schedule = [];
 
     // تاريخ اليوم
     final DateTime now = DateTime.now();
 
     // =========================================================
-    // أولاً: التطعيم الأساسي Core Vaccine
+    // التطعيم الأساسي Core Vaccine
     // =========================================================
 
-    // لو مفيش تاريخ تطعيم أساسي سابق
+    // لو مفيش تطعيم أساسي سابق
     if (lastCoreDate == null) {
-
       // -------------------------------------------------------
-      // من عمر شهرين إلى 4 شهور
-      // 60 يوم إلى 120 يوم
+      // من 60 إلى 75 يوم
       // -------------------------------------------------------
-      if (ageInDays >= 60 && ageInDays <= 120) {
-
-        // الجرعة الأولى: التطعيم الثلاثي
+      if (ageInDays >= 60 && ageInDays <= 75) {
+        // التطعيم الأول: رباعي
         schedule.add(
           VaccinationModel(
-            id: 'vac_c1',
-            vaccineName: 'التطعيم الثلاثي',
+            id: 'vac_d1',
+            petId: petId,
+            vaccineName: 'التطعيم الرباعي',
             dueDate: now,
           ),
         );
 
-        // الجرعة التنشيطية بعد 21 يوم
+        // الجرعة التنشيطية بعد 20 يوم
         schedule.add(
           VaccinationModel(
-            id: 'vac_c2',
-            vaccineName: 'جرعة تنشيطية (ثلاثي)',
+            id: 'vac_d2',
+            petId: petId,
+            vaccineName: 'جرعة تنشيطية (رباعي)',
             dueDate: now.add(
-              const Duration(days: 21),
+              const Duration(days: 20),
             ),
           ),
         );
       }
 
       // -------------------------------------------------------
-      // لو عمر القط أكبر من 4 شهور
+      // أكبر من 75 يوم
       // -------------------------------------------------------
-      else if (ageInDays > 120) {
-
-        // الجرعة الأولى: التطعيم الرباعي
+      else if (ageInDays > 75) {
+        // التطعيم الأساسي: خماسي / ثماني
         schedule.add(
           VaccinationModel(
-            id: 'vac_c3',
-            vaccineName: 'التطعيم الرباعي',
+            id: 'vac_d3',
+            petId: petId,
+            vaccineName: 'التطعيم الخماسي / الثماني',
             dueDate: now,
           ),
         );
 
-        // الجرعة التنشيطية بعد 21 يوم
+        // الجرعة التنشيطية بعد 20 يوم
         schedule.add(
           VaccinationModel(
-            id: 'vac_c4',
-            vaccineName: 'جرعة تنشيطية (رباعي)',
+            id: 'vac_d4',
+            petId: petId,
+            vaccineName: 'جرعة تنشيطية (خماسي / ثماني)',
             dueDate: now.add(
-              const Duration(days: 21),
+              const Duration(days: 20),
             ),
           ),
         );
@@ -100,66 +94,60 @@ class CatVaccinationCalculator {
     }
 
     // =========================================================
-    // لو القط عنده تطعيم أساسي سابق
+    // لو عنده تطعيم أساسي سابق
     // =========================================================
     else {
-
-      // التطعيم السنوي = بعد سنة من آخر تطعيم أساسي
+      // التطعيم السنوي بعد سنة من آخر تطعيم أساسي
       final DateTime nextCore =
       VaccinationDateHelper.addOneYear(lastCoreDate);
 
-      // بنضيف التطعيم السنوي للقائمة
+      // إضافة التطعيم السنوي
       schedule.add(
         VaccinationModel(
-          id: 'vac_c_annual',
-          vaccineName: 'التطعيم الرباعي السنوي',
+          id: 'vac_d_annual',
+          petId: petId,
+          vaccineName: 'التطعيم الأساسي السنوي',
           dueDate: nextCore,
         ),
       );
     }
 
     // =========================================================
-    // ثانياً: تطعيم السعار Rabies
+    // تطعيم السعار
     // =========================================================
 
-    // في البداية مفيش تاريخ محدد للسعار
     DateTime? rabiesDate;
 
-    // لو القط عمره ما أخد سعار
+    // لو لم يأخذ السعار من قبل
     if (lastRabiesDate == null) {
-
       // السعار يبدأ من عمر 3 شهور
-      // 3 شهور = 90 يوم
       if (ageInDays >= 90) {
-
-        // موعد السعار النهارده
         rabiesDate = now;
       }
     }
 
-    // لو القط أخد السعار قبل كده
+    // لو أخده قبل كده
     else {
-
-      // موعد السعار القادم بعد سنة
+      // الموعد القادم بعد سنة
       rabiesDate =
           VaccinationDateHelper.addOneYear(lastRabiesDate);
     }
 
-    // لو قدرنا نحدد موعد للسعار
+    // لو فيه موعد للسعار
     if (rabiesDate != null) {
-
-      // التأكد إن السعار مش قريب من تطعيم تاني
-      // أقل فرق مسموح = 20 يوم
+      // التأكد من وجود 20 يوم على الأقل
+      // بين السعار وأي تطعيم آخر
       rabiesDate = VaccinationDateHelper.adjustDateForGap(
         rabiesDate,
         schedule,
         gapDays: 20,
       );
 
-      // إضافة السعار إلى جدول التطعيمات
+      // إضافة السعار للقائمة
       schedule.add(
         VaccinationModel(
-          id: 'vac_c_rabies',
+          id: 'vac_d_rabies',
+          petId: petId,
           vaccineName: lastRabiesDate == null
               ? 'تطعيم السعار'
               : 'تطعيم السعار السنوي',
@@ -168,12 +156,14 @@ class CatVaccinationCalculator {
       );
     }
 
-    // ترتيب كل التطعيمات من الأقدم للأحدث
+    // =========================================================
+    // ترتيب التطعيمات حسب التاريخ
+    // =========================================================
     schedule.sort(
           (a, b) => a.dueDate.compareTo(b.dueDate),
     );
 
-    // إرجاع جدول التطعيمات النهائي
+    // إرجاع الجدول
     return schedule;
   }
 }

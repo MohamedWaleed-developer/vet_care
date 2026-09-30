@@ -1,7 +1,5 @@
-// موديل التطعيم
-import '../../models/vaccination_model.dart';
-
 // أدوات التاريخ
+import '../../models/vaccination_model.dart';
 import 'vaccination_date_helper.dart';
 
 // ===========================================================
@@ -19,6 +17,9 @@ class SheepVaccinationCalculator {
   // أقل فرق بين أي تطعيمين = 15 يوم
   // ---------------------------------------------------------
   static List<VaccinationModel> calculate({
+    // ID الخاص بالحيوان
+    required String petId,
+
     DateTime? lastSmallpoxDate,
     DateTime? lastFmdDate,
   }) {
@@ -47,6 +48,7 @@ class SheepVaccinationCalculator {
     schedule.add(
       VaccinationModel(
         id: 'vac_s_sp',
+        petId: petId,
         vaccineName: 'تطعيم الجدري',
         dueDate: adjustedSmallpox,
       ),
@@ -74,6 +76,7 @@ class SheepVaccinationCalculator {
     schedule.add(
       VaccinationModel(
         id: 'vac_s_fmd',
+        petId: petId,
         vaccineName: 'تطعيم الحمى القلاعية',
         dueDate: adjustedFmd,
       ),
@@ -85,6 +88,7 @@ class SheepVaccinationCalculator {
 
     _addSeasonalVaccines(
       schedule,
+      petId: petId,
       gapDays: 15,
     );
 
@@ -104,6 +108,7 @@ class SheepVaccinationCalculator {
   // ===========================================================
   static void _addSeasonalVaccines(
       List<VaccinationModel> schedule, {
+        required String petId,
         required int gapDays,
       }) {
     final DateTime now = DateTime.now();
@@ -134,6 +139,7 @@ class SheepVaccinationCalculator {
     schedule.add(
       VaccinationModel(
         id: 'vac_s_june_${juneDate.millisecondsSinceEpoch}',
+        petId: petId,
         vaccineName: 'تطعيم معوي (موسمي)',
         dueDate: juneDate,
       ),
@@ -165,6 +171,7 @@ class SheepVaccinationCalculator {
     schedule.add(
       VaccinationModel(
         id: 'vac_s_march_${marchDate.millisecondsSinceEpoch}',
+        petId: petId,
         vaccineName: 'تطعيم دموي وطاعون (موسمي)',
         dueDate: marchDate,
       ),
