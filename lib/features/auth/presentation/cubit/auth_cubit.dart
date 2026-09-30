@@ -11,18 +11,29 @@ class AuthCubit extends Cubit<AuthState> {
   final AuthRepository repository;
   final FirebaseAuth firebaseAuth;
 
-  AuthCubit(this.repository, this.firebaseAuth) : super(AuthInitial());
+  AuthCubit(
+      this.repository,
+      this.firebaseAuth,
+      ) : super(AuthInitial());
 
   void checkCurrentUser() {
     final user = firebaseAuth.currentUser;
+
     if (user != null) {
-      emit(AuthSuccess(UserModel.fromFirebaseUser(user)));
+      emit(
+        AuthSuccess(
+          UserModel.fromFirebaseUser(user),
+        ),
+      );
     } else {
       emit(AuthUnauthenticated());
     }
   }
 
-  Future<void> login(String email, String password) async {
+  Future<void> login(
+      String email,
+      String password,
+      ) async {
     emit(AuthLoading());
 
     try {
@@ -30,6 +41,7 @@ class AuthCubit extends Cubit<AuthState> {
         email: email,
         password: password,
       );
+
       emit(AuthSuccess(user));
     } catch (e) {
       emit(AuthError(e.toString()));
@@ -51,20 +63,30 @@ class AuthCubit extends Cubit<AuthState> {
         password: password,
         confirmPassword: confirmPassword,
       );
+
       emit(AuthSuccess(user));
     } catch (e) {
       emit(AuthError(e.toString()));
     }
   }
 
-  Future<void> sendPasswordResetEmail(String email) async {
+  Future<void> sendPasswordResetEmail(
+      String email,
+      ) async {
     emit(AuthLoading());
 
     try {
-      await repository.sendPasswordResetEmail(email: email);
-      emit(PasswordResetEmailSent(email));
+      await repository.sendPasswordResetEmail(
+        email: email,
+      );
+
+      emit(
+        PasswordResetEmailSent(email),
+      );
     } catch (e) {
-      emit(AuthError(e.toString()));
+      emit(
+        AuthError(e.toString()),
+      );
     }
   }
 
@@ -81,9 +103,16 @@ class AuthCubit extends Cubit<AuthState> {
         newPassword: newPassword,
         confirmNewPassword: confirmNewPassword,
       );
-      emit(PasswordChangedSuccess('تم تغيير كلمة المرور بنجاح'));
+
+      emit(
+        PasswordChangedSuccess(
+          'تم تغيير كلمة المرور بنجاح',
+        ),
+      );
     } catch (e) {
-      emit(AuthError(e.toString()));
+      emit(
+        AuthError(e.toString()),
+      );
     }
   }
 
@@ -92,9 +121,14 @@ class AuthCubit extends Cubit<AuthState> {
 
     try {
       await repository.logout();
-      emit(AuthUnauthenticated());
+
+      emit(
+        AuthUnauthenticated(),
+      );
     } catch (e) {
-      emit(AuthError(e.toString()));
+      emit(
+        AuthError(e.toString()),
+      );
     }
   }
 }

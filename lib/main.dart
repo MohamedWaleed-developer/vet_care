@@ -9,7 +9,7 @@ import 'core/di/injection_container.dart';
 import 'core/services/notifications/notification_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/cubit/auth_cubit.dart';
-import 'features/auth/presentation/screens/auth_view.dart';
+import 'features/splash/presentation/views/splash_view.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
@@ -57,7 +57,7 @@ class VetCareApp extends StatelessWidget {
           },
           home: BlocProvider(
             create: (_) => getIt<AuthCubit>()..checkCurrentUser(),
-            child: SignUpScreen(),
+            child: SplashScreen(),
           ),
         );
       },
