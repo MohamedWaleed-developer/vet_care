@@ -43,6 +43,9 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i65.AuthRepository>(
       () => _i65.AuthRepository(gh<_i909.AuthRemoteDataSource>()),
     );
+    gh.factory<_i302.AuthCubit>(
+      () => _i302.AuthCubit(gh<_i65.AuthRepository>(), gh<_i59.FirebaseAuth>()),
+    );
     gh.lazySingleton<_i401.VaccinationsRepository>(
       () => _i401.VaccinationsRepository(
         gh<_i589.VaccinationsRemoteDataSource>(),
