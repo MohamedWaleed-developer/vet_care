@@ -3,45 +3,32 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/models/animal_model.dart';
 import '../../data/repositories/pets_repository.dart';
 
-// =========================================================
-// حالات الـ Pets
-// =========================================================
-
 abstract class PetsState {}
 
-// الحالة الابتدائية
 class PetsInitial extends PetsState {}
 
-// أثناء تحميل الحيوانات
 class PetsLoading extends PetsState {}
 
-// بعد نجاح جلب الحيوانات
 class PetsLoaded extends PetsState {
   final List<AnimalModel> pets;
 
   PetsLoaded(this.pets);
 }
 
-// في حالة حدوث خطأ
 class PetsError extends PetsState {
   final String message;
 
   PetsError(this.message);
 }
 
-// =========================================================
-// Pets Cubit
-// =========================================================
-
 class PetsCubit extends Cubit<PetsState> {
   final PetsRepository repository;
 
   PetsCubit(this.repository) : super(PetsInitial());
 
-  // =======================================================
+  // =========================================================
   // جلب الحيوانات
-  // =======================================================
-
+  // =========================================================
   Future<void> getPets(String ownerId) async {
     emit(PetsLoading());
 
@@ -58,35 +45,38 @@ class PetsCubit extends Cubit<PetsState> {
     }
   }
 
-  // =======================================================
+  // =========================================================
   // إضافة حيوان
-  // =======================================================
-
-  Future<void> addPet(
+  //
+  // بنرجع petId عشان الصورة تتخزن في Hive بنفس الـ ID
+  // =========================================================
+  Future<String?> addPet(
       AnimalModel pet,
       String ownerId,
       ) async {
     try {
-      await repository.addPet(
+      final petId = await repository.addPet(
         pet,
         ownerId,
       );
 
-      // بعد الإضافة نعيد تحميل القائمة
       await getPets(ownerId);
+
+      return petId;
     } catch (e) {
       emit(
         PetsError(
           'حدث خطأ أثناء إضافة الحيوان',
         ),
       );
+
+      return null;
     }
   }
 
-  // =======================================================
+  // =========================================================
   // تعديل حيوان
-  // =======================================================
-
+  // =========================================================
   Future<void> updatePet(
       String petId,
       AnimalModel pet,
@@ -99,7 +89,6 @@ class PetsCubit extends Cubit<PetsState> {
         ownerId,
       );
 
-      // بعد التعديل نعيد تحميل القائمة
       await getPets(ownerId);
     } catch (e) {
       emit(
