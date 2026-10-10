@@ -2,15 +2,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/animal_model.dart';
 
-// استدعاء Firebase Firestore
 class PetsRemoteDataSource {
   final FirebaseFirestore firestore;
 
   PetsRemoteDataSource(this.firestore);
 
   // =========================================================
-  // getPets
-  // هات كل الحيوانات الخاصة بالـ ownerId من Firestore
+  // جلب كل الحيوانات الخاصة بالمستخدم
   // =========================================================
   Future<List<AnimalModel>> getPets(String ownerId) async {
     final snapshot = await firestore
@@ -22,9 +20,7 @@ class PetsRemoteDataSource {
       final data = doc.data();
 
       return AnimalModel(
-        // ID الخاص بالحيوان في Firestore
         id: doc.id,
-
         name: data['name'] ?? '',
 
         gender: AnimalGender.values.firstWhere(
@@ -46,10 +42,6 @@ class PetsRemoteDataSource {
         weightKg: data['weightKg'] ?? 0,
         weightGrams: data['weightGrams'] ?? 0,
 
-        // =====================================================
-        // Cats & Dogs
-        // =====================================================
-
         lastRabiesDate: _dateFromFirestore(
           data['lastRabiesDate'],
         ),
@@ -57,10 +49,6 @@ class PetsRemoteDataSource {
         lastCoreDate: _dateFromFirestore(
           data['lastCoreDate'],
         ),
-
-        // =====================================================
-        // Goats & Sheep
-        // =====================================================
 
         lastSmallpoxDate: _dateFromFirestore(
           data['lastSmallpoxDate'],
@@ -70,10 +58,6 @@ class PetsRemoteDataSource {
           data['lastFmdDate'],
         ),
 
-        // =====================================================
-        // Goats only
-        // =====================================================
-
         lastMycoDate: _dateFromFirestore(
           data['lastMycoDate'],
         ),
@@ -82,14 +66,15 @@ class PetsRemoteDataSource {
   }
 
   // =========================================================
-  // addPet
-  // إضافة حيوان جديد إلى Firestore
+  // إضافة حيوان جديد
+  //
+  // بنرجع ID بتاع Firestore عشان نستخدمه كمفتاح للصورة في Hive
   // =========================================================
-  Future<void> addPet(
+  Future<String> addPet(
       AnimalModel pet,
       String ownerId,
       ) async {
-    await firestore.collection('pets').add({
+    final docRef = await firestore.collection('pets').add({
       'ownerId': ownerId,
 
       'name': pet.name,
@@ -105,10 +90,6 @@ class PetsRemoteDataSource {
       'weightKg': pet.weightKg,
       'weightGrams': pet.weightGrams,
 
-      // =====================================================
-      // Cats & Dogs
-      // =====================================================
-
       'lastRabiesDate': _dateToFirestore(
         pet.lastRabiesDate,
       ),
@@ -116,10 +97,6 @@ class PetsRemoteDataSource {
       'lastCoreDate': _dateToFirestore(
         pet.lastCoreDate,
       ),
-
-      // =====================================================
-      // Goats & Sheep
-      // =====================================================
 
       'lastSmallpoxDate': _dateToFirestore(
         pet.lastSmallpoxDate,
@@ -129,19 +106,16 @@ class PetsRemoteDataSource {
         pet.lastFmdDate,
       ),
 
-      // =====================================================
-      // Goats only
-      // =====================================================
-
       'lastMycoDate': _dateToFirestore(
         pet.lastMycoDate,
       ),
     });
+
+    return docRef.id;
   }
 
   // =========================================================
-  // updatePet
-  // تعديل بيانات حيوان موجود
+  // تعديل حيوان
   // =========================================================
   Future<void> updatePet(
       String petId,
@@ -164,10 +138,6 @@ class PetsRemoteDataSource {
       'weightKg': pet.weightKg,
       'weightGrams': pet.weightGrams,
 
-      // =====================================================
-      // Cats & Dogs
-      // =====================================================
-
       'lastRabiesDate': _dateToFirestore(
         pet.lastRabiesDate,
       ),
@@ -175,10 +145,6 @@ class PetsRemoteDataSource {
       'lastCoreDate': _dateToFirestore(
         pet.lastCoreDate,
       ),
-
-      // =====================================================
-      // Goats & Sheep
-      // =====================================================
 
       'lastSmallpoxDate': _dateToFirestore(
         pet.lastSmallpoxDate,
@@ -188,19 +154,12 @@ class PetsRemoteDataSource {
         pet.lastFmdDate,
       ),
 
-      // =====================================================
-      // Goats only
-      // =====================================================
-
       'lastMycoDate': _dateToFirestore(
         pet.lastMycoDate,
       ),
     });
   }
 
-  // =========================================================
-  // تحويل DateTime إلى Timestamp قبل التخزين في Firestore
-  // =========================================================
   Timestamp? _dateToFirestore(DateTime? date) {
     if (date == null) {
       return null;
@@ -209,9 +168,6 @@ class PetsRemoteDataSource {
     return Timestamp.fromDate(date);
   }
 
-  // =========================================================
-  // تحويل Timestamp من Firestore إلى DateTime
-  // =========================================================
   DateTime? _dateFromFirestore(dynamic value) {
     if (value == null) {
       return null;

@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../auth/presentation/screens/HomeScreen.dart';
-import '../../../auth/presentation/screens/login_screen.dart';
+import '../../../home/presentation/screens/home_screen.dart';
 import '../../../onboarding/presentation/screens/onboarding_screen.dart';
 
 class SplashScreen extends StatelessWidget {
@@ -32,13 +31,13 @@ class SplashScreen extends StatelessWidget {
     Widget next;
     if (user != null) {
       // مسجل دخول -> الهوم مباشرة
-      next = const Homescreen();
+      next = const HomeScreen();
     } else if (!seenOnboarding) {
       // مستخدم جديد -> أونبوردينج
       next = const OnboardingScreen();
     } else {
       // شاف الأونبوردينج ومش مسجل -> لوجين
-      next = const LoginScreen();
+      next = const OnboardingScreen();
     }
 
     Navigator.of(context).pushReplacement(

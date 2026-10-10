@@ -6,13 +6,12 @@ class PetsRepository {
 
   PetsRepository(this.remoteDataSource);
 
-  // جلب كل الحيوانات الخاصة بالمستخدم
   Future<List<AnimalModel>> getPets(String ownerId) {
     return remoteDataSource.getPets(ownerId);
   }
 
-  // إضافة حيوان جديد
-  Future<void> addPet(
+  // بيرجع ID الحيوان الجديد
+  Future<String> addPet(
       AnimalModel pet,
       String ownerId,
       ) {
@@ -22,7 +21,6 @@ class PetsRepository {
     );
   }
 
-  // تعديل بيانات حيوان
   Future<void> updatePet(
       String petId,
       AnimalModel pet,

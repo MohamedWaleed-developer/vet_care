@@ -9,6 +9,7 @@ import 'core/di/injection_container.dart';
 import 'core/services/notifications/notification_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/cubit/auth_cubit.dart';
+import 'features/home/presentation/screens/home_screen.dart';
 import 'features/splash/presentation/views/splash_view.dart';
 import 'firebase_options.dart';
 
@@ -62,6 +63,9 @@ class VetCareApp extends StatelessWidget {
               );
             },
             home: const SplashScreen(),
+            routes: {
+              '/home': (context) => const HomeScreen(), // مسار شاشة الهوم الرئيسية
+            },
           );
         },
       ),
