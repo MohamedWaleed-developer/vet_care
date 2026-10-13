@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get_it/get_it.dart';
 
+import '../../../../core/routing/route_names.dart';
+
 import '../../../pets/data/datasources/pets_remote_data_source.dart';
 import '../../../pets/data/local/pet_image_local_storage.dart';
 import '../../../pets/data/models/animal_model.dart';
