@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../home_colors.dart';
 
-/// الـ Bottom Navigation: الرئيسية / المتجر / المواعيد / الإشعارات / المزيد
-/// (index 0 = الرئيسية وبتظهر على اليمين في RTL)
 class HomeBottomNav extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
@@ -17,9 +15,9 @@ class HomeBottomNav extends StatelessWidget {
   static const _items = <_NavItem>[
     _NavItem('الرئيسية', Icons.home_rounded),
     _NavItem('المتجر', Icons.storefront_outlined),
-    _NavItem('المواعيد', Icons.calendar_month_outlined),
-    _NavItem('الإشعارات', Icons.notifications_none_rounded),
-    _NavItem('المزيد', Icons.more_horiz),
+    _NavItem('السلة', Icons.shopping_bag_outlined),
+    _NavItem('طلباتي', Icons.receipt_long_outlined),
+    _NavItem('التطعيمات', Icons.vaccines_outlined),
   ];
 
   @override

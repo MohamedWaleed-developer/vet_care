@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -28,7 +30,7 @@ class _SearchFilterScreenState extends State<SearchFilterScreen> {
   @override
   void initState() {
     super.initState();
-    final upperLimit = widget.maxPrice < 1 ? 100 : widget.maxPrice;
+    final upperLimit = widget.maxPrice < 1 ? 100.0 : widget.maxPrice;
     _priceRange = RangeValues(
       widget.initialFilter.minPrice.clamp(0, upperLimit).toDouble(),
       (widget.initialFilter.maxPrice <= 0
@@ -43,11 +45,11 @@ class _SearchFilterScreenState extends State<SearchFilterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final upperLimit = widget.maxPrice < 1 ? 100 : widget.maxPrice;
+    final upperLimit = widget.maxPrice < 1 ? 100.0 : widget.maxPrice;
     final numberFormat = NumberFormat('#,##0', 'ar_EG');
 
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: ui.TextDirection.rtl,
       child: Scaffold(
         backgroundColor: AppColors.surface,
       appBar: AppBar(
@@ -115,7 +117,7 @@ class _SearchFilterScreenState extends State<SearchFilterScreen> {
                           values: _priceRange,
                           min: 0,
                           max: upperLimit,
-                          divisions: upperLimit.round().clamp(1, 1000),
+                          divisions: upperLimit.round().clamp(1, 1000).toInt(),
                           activeColor: AppColors.primaryDark,
                           onChanged: (values) =>
                               setState(() => _priceRange = values),

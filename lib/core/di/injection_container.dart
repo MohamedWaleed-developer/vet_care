@@ -16,6 +16,9 @@ import '../services/notifications/notification_service.dart';
 import '../../features/pets/data/datasources/pets_remote_data_source.dart';
 import '../../features/pets/data/repositories/pets_repository.dart';
 import '../../features/pets/presentation/cubit/pets_cubit.dart';
+import '../../features/favorites/data/datasources/favorites_remote_data_source.dart';
+import '../../features/favorites/data/repositories/favorites_repository.dart';
+import '../../features/favorites/presentation/cubit/favorites_cubit.dart';
 import '../../features/store/data/datasources/store_remote_data_source.dart';
 import '../../features/store/data/repositories/store_repository.dart';
 import '../../features/store/presentation/cubit/store_cubit.dart';
@@ -24,6 +27,11 @@ import '../../features/store/presentation/cubit/search_cubit.dart';
 import '../../features/cart/data/datasources/cart_remote_data_source.dart';
 import '../../features/cart/data/repositories/cart_repository.dart';
 import '../../features/cart/presentation/cubit/cart_cubit.dart';
+import '../../core/services/payment/payment_simulator.dart';
+import '../../features/orders/data/datasources/orders_remote_data_source.dart';
+import '../../features/orders/data/repositories/orders_repository.dart';
+import '../../features/orders/presentation/cubit/orders_cubit.dart';
+import '../../features/checkout/presentation/cubit/checkout_cubit.dart';
 
 final GetIt sl = GetIt.instance;
 
@@ -129,6 +137,24 @@ Future<void> setupDependencies() async {
       ),
     );
   }
+  if (!sl.isRegistered<FavoritesRemoteDataSource>()) {
+    sl.registerLazySingleton<FavoritesRemoteDataSource>(
+      () => FavoritesRemoteDataSource(
+        sl<FirebaseFirestore>(),
+        sl<FirebaseAuth>(),
+      ),
+    );
+  }
+  if (!sl.isRegistered<FavoritesRepository>()) {
+    sl.registerLazySingleton<FavoritesRepository>(
+      () => FavoritesRepository(sl<FavoritesRemoteDataSource>()),
+    );
+  }
+  if (!sl.isRegistered<FavoritesCubit>()) {
+    sl.registerFactory<FavoritesCubit>(
+      () => FavoritesCubit(sl<FavoritesRepository>()),
+    );
+  }
   if (!sl.isRegistered<StoreRemoteDataSource>()) {
     sl.registerLazySingleton<StoreRemoteDataSource>(
       () => StoreRemoteDataSource(sl<FirebaseFirestore>(), sl<FirebaseAuth>()),
@@ -162,5 +188,30 @@ Future<void> setupDependencies() async {
   }
   if (!sl.isRegistered<CartCubit>()) {
     sl.registerFactory<CartCubit>(() => CartCubit(sl<CartRepository>()));
+  }
+  if (!sl.isRegistered<OrdersRemoteDataSource>()) {
+    sl.registerLazySingleton<OrdersRemoteDataSource>(
+      () => OrdersRemoteDataSource(sl<FirebaseFirestore>(), sl<FirebaseAuth>()),
+    );
+  }
+  if (!sl.isRegistered<OrdersRepository>()) {
+    sl.registerLazySingleton<OrdersRepository>(
+      () => OrdersRepository(sl<OrdersRemoteDataSource>()),
+    );
+  }
+  if (!sl.isRegistered<PaymentSimulator>()) {
+    sl.registerLazySingleton<PaymentSimulator>(() => PaymentSimulator());
+  }
+  if (!sl.isRegistered<OrdersCubit>()) {
+    sl.registerFactory<OrdersCubit>(() => OrdersCubit(sl<OrdersRepository>()));
+  }
+  if (!sl.isRegistered<CheckoutCubit>()) {
+    sl.registerFactory<CheckoutCubit>(
+      () => CheckoutCubit(
+        sl<OrdersRepository>(),
+        sl<PaymentSimulator>(),
+        sl<CartRepository>(),
+      ),
+    );
   }
 }

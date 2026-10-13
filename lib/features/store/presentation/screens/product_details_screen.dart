@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -8,6 +10,8 @@ import '../../../../core/widgets/app_empty.dart';
 import '../../../../core/widgets/app_error.dart';
 import '../../../../core/widgets/app_image.dart';
 import '../../../../core/widgets/app_loader.dart';
+import '../../../favorites/presentation/cubit/favorites_cubit.dart';
+import '../../../favorites/presentation/widgets/favorite_button.dart';
 import '../../data/models/product_model.dart';
 import '../cubit/product_details_cubit.dart';
 import '../cubit/product_details_state.dart';
@@ -20,9 +24,14 @@ class ProductDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      textDirection: TextDirection.rtl,
-      child: BlocProvider(
-        create: (_) => sl<ProductDetailsCubit>()..watchProduct(productId),
+      textDirection: ui.TextDirection.rtl,
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider(
+            create: (_) => sl<ProductDetailsCubit>()..watchProduct(productId),
+          ),
+          BlocProvider(create: (_) => sl<FavoritesCubit>()..watchFavorites()),
+        ],
         child: _ProductDetailsView(productId: productId),
       ),
     );
@@ -53,6 +62,18 @@ class _ProductDetailsViewState extends State<_ProductDetailsView> {
           'تفاصيل المنتج',
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
         ),
+        actions: [
+          BlocBuilder<ProductDetailsCubit, ProductDetailsState>(
+            builder: (context, state) => switch (state) {
+              ProductDetailsLoaded(:final product) => FavoriteButton(
+                  product: product,
+                  iconSize: 22,
+                ),
+              _ => const SizedBox(width: 12),
+            },
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: SafeArea(
         top: false,

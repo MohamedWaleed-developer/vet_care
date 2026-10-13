@@ -70,5 +70,21 @@ class ProductModel {
     );
   }
 
+  Map<String, dynamic> toMap() => {
+        'name': name,
+        'description': description,
+        'price': price,
+        'rating': rating,
+        'reviewsCount': reviewsCount,
+        'imageUrl': imageUrl,
+        'imageUrls': imageUrls,
+        'categoryId': categoryId,
+        'brand': brand,
+        'isActive': isAvailable,
+        'previousPrice': previousPrice,
+        'ingredients': ingredients,
+        'variants': variants,
+      };
+
   static String _stringValue(dynamic value) => value?.toString().trim() ?? '';
 }

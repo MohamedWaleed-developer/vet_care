@@ -7,6 +7,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_empty.dart';
 import '../../../../core/widgets/app_error.dart';
 import '../../../../core/widgets/app_loader.dart';
+import '../../../favorites/presentation/cubit/favorites_cubit.dart';
 import '../../data/models/category_model.dart';
 import '../../data/models/product_model.dart';
 import '../../data/models/store_search_filter.dart';
@@ -22,8 +23,11 @@ class SearchScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Directionality(
       textDirection: TextDirection.rtl,
-      child: BlocProvider(
-        create: (_) => sl<SearchCubit>()..watchStore(),
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider(create: (_) => sl<SearchCubit>()..watchStore()),
+          BlocProvider(create: (_) => sl<FavoritesCubit>()..watchFavorites()),
+        ],
         child: const _SearchView(),
       ),
     );

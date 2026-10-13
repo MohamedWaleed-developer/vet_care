@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_image.dart';
+import '../../../favorites/presentation/widgets/favorite_button.dart';
 import '../../data/models/product_model.dart';
 
 class ProductCard extends StatelessWidget {
@@ -44,9 +45,19 @@ class ProductCard extends StatelessWidget {
                 Expanded(
                   child: SizedBox(
                     width: double.infinity,
-                    child: AppImage(
-                      imageUrl: product.imageUrl,
-                      borderRadius: BorderRadius.circular(14),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        AppImage(
+                          imageUrl: product.imageUrl,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        PositionedDirectional(
+                          top: 6,
+                          end: 6,
+                          child: FavoriteButton(product: product, iconSize: 18),
+                        ),
+                      ],
                     ),
                   ),
                 ),

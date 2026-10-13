@@ -7,20 +7,30 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_empty.dart';
 import '../../../../core/widgets/app_error.dart';
 import '../../../../core/widgets/app_loader.dart';
+import '../../../favorites/presentation/cubit/favorites_cubit.dart';
 import '../cubit/store_cubit.dart';
 import '../cubit/store_state.dart';
 import '../widgets/product_card.dart';
 import '../widgets/store_category_chip.dart';
 
 class StoreScreen extends StatelessWidget {
-  const StoreScreen({super.key});
+  final String? initialCategoryId;
+
+  const StoreScreen({super.key, this.initialCategoryId});
 
   @override
   Widget build(BuildContext context) {
     return Directionality(
       textDirection: TextDirection.rtl,
-      child: BlocProvider(
-        create: (_) => sl<StoreCubit>()..watchStore(),
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider(
+            create: (_) => sl<StoreCubit>()
+              ..selectCategory(initialCategoryId)
+              ..watchStore(),
+          ),
+          BlocProvider(create: (_) => sl<FavoritesCubit>()..watchFavorites()),
+        ],
         child: const _StoreView(),
       ),
     );
@@ -57,6 +67,12 @@ class _StoreView extends StatelessWidget {
           },
         ),
         actions: [
+          IconButton(
+            tooltip: 'المفضلة',
+            icon: const Icon(Icons.favorite_border_rounded),
+            onPressed: () =>
+                Navigator.of(context).pushNamed(RouteNames.favorites),
+          ),
           IconButton(
             tooltip: 'البحث',
             icon: const Icon(Icons.search_rounded),
