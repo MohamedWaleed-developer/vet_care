@@ -1,0 +1,217 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dio/dio.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:get_it/get_it.dart';
+
+import '../network/dio_client.dart';
+import '../services/firebase/firebase_auth_service.dart';
+import '../services/firebase/firestore_service.dart';
+import '../services/notifications/fcm_service.dart';
+import '../services/notifications/notification_service.dart';
+
+// =========================
+// Pets Feature
+// =========================
+import '../../features/pets/data/datasources/pets_remote_data_source.dart';
+import '../../features/pets/data/repositories/pets_repository.dart';
+import '../../features/pets/presentation/cubit/pets_cubit.dart';
+import '../../features/favorites/data/datasources/favorites_remote_data_source.dart';
+import '../../features/favorites/data/repositories/favorites_repository.dart';
+import '../../features/favorites/presentation/cubit/favorites_cubit.dart';
+import '../../features/store/data/datasources/store_remote_data_source.dart';
+import '../../features/store/data/repositories/store_repository.dart';
+import '../../features/store/presentation/cubit/store_cubit.dart';
+import '../../features/store/presentation/cubit/product_details_cubit.dart';
+import '../../features/store/presentation/cubit/search_cubit.dart';
+import '../../features/cart/data/datasources/cart_remote_data_source.dart';
+import '../../features/cart/data/repositories/cart_repository.dart';
+import '../../features/cart/presentation/cubit/cart_cubit.dart';
+import '../../core/services/payment/payment_simulator.dart';
+import '../../features/orders/data/datasources/orders_remote_data_source.dart';
+import '../../features/orders/data/repositories/orders_repository.dart';
+import '../../features/orders/presentation/cubit/orders_cubit.dart';
+import '../../features/checkout/presentation/cubit/checkout_cubit.dart';
+
+final GetIt sl = GetIt.instance;
+
+Future<void> setupDependencies() async {
+  // =========================
+  // Firebase Auth
+  // =========================
+  if (!sl.isRegistered<FirebaseAuth>()) {
+    sl.registerLazySingleton<FirebaseAuth>(
+          () => FirebaseAuth.instance,
+    );
+  }
+
+  // =========================
+  // Firebase Firestore
+  // =========================
+  if (!sl.isRegistered<FirebaseFirestore>()) {
+    sl.registerLazySingleton<FirebaseFirestore>(
+          () => FirebaseFirestore.instance,
+    );
+  }
+
+  // =========================
+  // Firebase Messaging
+  // =========================
+  if (!sl.isRegistered<FirebaseMessaging>()) {
+    sl.registerLazySingleton<FirebaseMessaging>(
+          () => FirebaseMessaging.instance,
+    );
+  }
+
+  // =========================
+  // Dio
+  // =========================
+  if (!sl.isRegistered<Dio>()) {
+    sl.registerLazySingleton<Dio>(
+          () => DioClient().dio,
+    );
+  }
+
+  // =========================
+  // Firebase Auth Service
+  // =========================
+  if (!sl.isRegistered<FirebaseAuthService>()) {
+    sl.registerLazySingleton<FirebaseAuthService>(
+          () => FirebaseAuthService(
+        sl<FirebaseAuth>(),
+      ),
+    );
+  }
+
+  // =========================
+  // Firestore Service
+  // =========================
+  if (!sl.isRegistered<FirestoreService>()) {
+    sl.registerLazySingleton<FirestoreService>(
+          () => FirestoreService(
+        sl<FirebaseFirestore>(),
+      ),
+    );
+  }
+
+  // =========================
+  // Notification Service
+  // =========================
+  if (!sl.isRegistered<NotificationService>()) {
+    sl.registerLazySingleton<NotificationService>(
+          () => FcmService(
+        sl<FirebaseMessaging>(),
+      ),
+    );
+  }
+
+  // =========================
+  // Pets Remote Data Source
+  // =========================
+  if (!sl.isRegistered<PetsRemoteDataSource>()) {
+    sl.registerLazySingleton<PetsRemoteDataSource>(
+          () => PetsRemoteDataSource(
+        sl<FirebaseFirestore>(),
+      ),
+    );
+  }
+
+  // =========================
+  // Pets Repository
+  // =========================
+  if (!sl.isRegistered<PetsRepository>()) {
+    sl.registerLazySingleton<PetsRepository>(
+          () => PetsRepository(
+        sl<PetsRemoteDataSource>(),
+      ),
+    );
+  }
+
+  // =========================
+  // Pets Cubit
+  // =========================
+  if (!sl.isRegistered<PetsCubit>()) {
+    sl.registerFactory<PetsCubit>(
+          () => PetsCubit(
+        sl<PetsRepository>(),
+      ),
+    );
+  }
+  if (!sl.isRegistered<FavoritesRemoteDataSource>()) {
+    sl.registerLazySingleton<FavoritesRemoteDataSource>(
+      () => FavoritesRemoteDataSource(
+        sl<FirebaseFirestore>(),
+        sl<FirebaseAuth>(),
+      ),
+    );
+  }
+  if (!sl.isRegistered<FavoritesRepository>()) {
+    sl.registerLazySingleton<FavoritesRepository>(
+      () => FavoritesRepository(sl<FavoritesRemoteDataSource>()),
+    );
+  }
+  if (!sl.isRegistered<FavoritesCubit>()) {
+    sl.registerFactory<FavoritesCubit>(
+      () => FavoritesCubit(sl<FavoritesRepository>()),
+    );
+  }
+  if (!sl.isRegistered<StoreRemoteDataSource>()) {
+    sl.registerLazySingleton<StoreRemoteDataSource>(
+      () => StoreRemoteDataSource(sl<FirebaseFirestore>(), sl<FirebaseAuth>()),
+    );
+  }
+  if (!sl.isRegistered<StoreRepository>()) {
+    sl.registerLazySingleton<StoreRepository>(
+      () => StoreRepository(sl<StoreRemoteDataSource>()),
+    );
+  }
+  if (!sl.isRegistered<StoreCubit>()) {
+    sl.registerFactory<StoreCubit>(() => StoreCubit(sl<StoreRepository>()));
+  }
+  if (!sl.isRegistered<ProductDetailsCubit>()) {
+    sl.registerFactory<ProductDetailsCubit>(
+      () => ProductDetailsCubit(sl<StoreRepository>()),
+    );
+  }
+  if (!sl.isRegistered<SearchCubit>()) {
+    sl.registerFactory<SearchCubit>(() => SearchCubit(sl<StoreRepository>()));
+  }
+  if (!sl.isRegistered<CartRemoteDataSource>()) {
+    sl.registerLazySingleton<CartRemoteDataSource>(
+      () => CartRemoteDataSource(sl<FirebaseFirestore>(), sl<FirebaseAuth>()),
+    );
+  }
+  if (!sl.isRegistered<CartRepository>()) {
+    sl.registerLazySingleton<CartRepository>(
+      () => CartRepository(sl<CartRemoteDataSource>()),
+    );
+  }
+  if (!sl.isRegistered<CartCubit>()) {
+    sl.registerFactory<CartCubit>(() => CartCubit(sl<CartRepository>()));
+  }
+  if (!sl.isRegistered<OrdersRemoteDataSource>()) {
+    sl.registerLazySingleton<OrdersRemoteDataSource>(
+      () => OrdersRemoteDataSource(sl<FirebaseFirestore>(), sl<FirebaseAuth>()),
+    );
+  }
+  if (!sl.isRegistered<OrdersRepository>()) {
+    sl.registerLazySingleton<OrdersRepository>(
+      () => OrdersRepository(sl<OrdersRemoteDataSource>()),
+    );
+  }
+  if (!sl.isRegistered<PaymentSimulator>()) {
+    sl.registerLazySingleton<PaymentSimulator>(() => PaymentSimulator());
+  }
+  if (!sl.isRegistered<OrdersCubit>()) {
+    sl.registerFactory<OrdersCubit>(() => OrdersCubit(sl<OrdersRepository>()));
+  }
+  if (!sl.isRegistered<CheckoutCubit>()) {
+    sl.registerFactory<CheckoutCubit>(
+      () => CheckoutCubit(
+        sl<OrdersRepository>(),
+        sl<PaymentSimulator>(),
+        sl<CartRepository>(),
+      ),
+    );
+  }
+}

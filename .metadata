@@ -15,10 +15,15 @@ migration:
     - platform: root
       create_revision: 058e0af2c2b57e369d905a03ac9748b0ebf543c6
       base_revision: 058e0af2c2b57e369d905a03ac9748b0ebf543c6
-    - platform: android
-      create_revision: 058e0af2c2b57e369d905a03ac9748b0ebf543c6
-      base_revision: 058e0af2c2b57e369d905a03ac9748b0ebf543c6
-    - platform: ios
+<<<<<<< HEAD
+<<<<<<< HEAD
+    - platform: web
+=======
+    - platform: windows
+>>>>>>> feature/vaccinations
+=======
+    - platform: windows
+>>>>>>> cd3f9221918c262d2c7370dd7167b7a2376016cb
       create_revision: 058e0af2c2b57e369d905a03ac9748b0ebf543c6
       base_revision: 058e0af2c2b57e369d905a03ac9748b0ebf543c6
 
