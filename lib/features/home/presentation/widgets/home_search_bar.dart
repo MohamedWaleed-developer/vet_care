@@ -5,8 +5,9 @@ import '../home_colors.dart';
 /// شريط البحث
 class HomeSearchBar extends StatelessWidget {
   final ValueChanged<String>? onSubmitted;
+  final VoidCallback? onTap;
 
-  const HomeSearchBar({super.key, this.onSubmitted});
+  const HomeSearchBar({super.key, this.onSubmitted, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -18,6 +19,8 @@ class HomeSearchBar extends StatelessWidget {
         border: Border.all(color: HomeColors.cardBorder.withOpacity(0.6)),
       ),
       child: TextField(
+        readOnly: onTap != null,
+        onTap: onTap,
         onSubmitted: onSubmitted,
         style: const TextStyle(fontSize: 14),
         decoration: const InputDecoration(

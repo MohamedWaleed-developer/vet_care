@@ -51,9 +51,6 @@ extension GetItInjectableX on _i174.GetIt {
         gh<_i589.VaccinationsRemoteDataSource>(),
       ),
     );
-    gh.factory<_i302.AuthCubit>(
-      () => _i302.AuthCubit(gh<_i65.AuthRepository>(), gh<_i59.FirebaseAuth>()),
-    );
     gh.factory<_i962.VaccinationsCubit>(
       () => _i962.VaccinationsCubit(gh<_i401.VaccinationsRepository>()),
     );
