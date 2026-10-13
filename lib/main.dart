@@ -10,6 +10,10 @@ import 'core/services/notifications/notification_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/cubit/auth_cubit.dart';
 import 'features/home/presentation/screens/home_screen.dart';
+import 'core/routing/route_names.dart';
+import 'features/store/presentation/screens/product_details_screen.dart';
+import 'features/store/presentation/screens/search_screen.dart';
+import 'features/store/presentation/screens/store_screen.dart';
 import 'features/splash/presentation/views/splash_view.dart';
 import 'firebase_options.dart';
 
@@ -65,6 +69,11 @@ class VetCareApp extends StatelessWidget {
             home: const SplashScreen(),
             routes: {
               '/home': (context) => const HomeScreen(), // مسار شاشة الهوم الرئيسية
+              RouteNames.store: (_) => const StoreScreen(),
+              RouteNames.search: (_) => const SearchScreen(),
+              RouteNames.productDetails: (context) => ProductDetailsScreen(
+                    productId: (ModalRoute.of(context)?.settings.arguments as String?) ?? '',
+                  ),
             },
           );
         },

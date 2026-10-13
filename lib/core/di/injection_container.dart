@@ -16,6 +16,11 @@ import '../services/notifications/notification_service.dart';
 import '../../features/pets/data/datasources/pets_remote_data_source.dart';
 import '../../features/pets/data/repositories/pets_repository.dart';
 import '../../features/pets/presentation/cubit/pets_cubit.dart';
+import '../../features/store/data/datasources/store_remote_data_source.dart';
+import '../../features/store/data/repositories/store_repository.dart';
+import '../../features/store/presentation/cubit/store_cubit.dart';
+import '../../features/store/presentation/cubit/product_details_cubit.dart';
+import '../../features/store/presentation/cubit/search_cubit.dart';
 
 final GetIt sl = GetIt.instance;
 
@@ -120,5 +125,26 @@ Future<void> setupDependencies() async {
         sl<PetsRepository>(),
       ),
     );
+  }
+  if (!sl.isRegistered<StoreRemoteDataSource>()) {
+    sl.registerLazySingleton<StoreRemoteDataSource>(
+      () => StoreRemoteDataSource(sl<FirebaseFirestore>(), sl<FirebaseAuth>()),
+    );
+  }
+  if (!sl.isRegistered<StoreRepository>()) {
+    sl.registerLazySingleton<StoreRepository>(
+      () => StoreRepository(sl<StoreRemoteDataSource>()),
+    );
+  }
+  if (!sl.isRegistered<StoreCubit>()) {
+    sl.registerFactory<StoreCubit>(() => StoreCubit(sl<StoreRepository>()));
+  }
+  if (!sl.isRegistered<ProductDetailsCubit>()) {
+    sl.registerFactory<ProductDetailsCubit>(
+      () => ProductDetailsCubit(sl<StoreRepository>()),
+    );
+  }
+  if (!sl.isRegistered<SearchCubit>()) {
+    sl.registerFactory<SearchCubit>(() => SearchCubit(sl<StoreRepository>()));
   }
 }
