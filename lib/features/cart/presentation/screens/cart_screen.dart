@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -16,7 +18,7 @@ class CartScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: ui.TextDirection.rtl,
       child: BlocProvider(
         create: (_) => sl<CartCubit>()..watchItems(),
         child: const _CartView(),
@@ -125,6 +127,11 @@ class _CartView extends StatelessWidget {
         ),
       ),
       actions: [
+        IconButton(
+          tooltip: 'طلباتي',
+          icon: const Icon(Icons.receipt_long_outlined, color: Color(0xFF1E6554)),
+          onPressed: () => Navigator.pushNamed(context, RouteNames.orders),
+        ),
         BlocBuilder<CartCubit, CartState>(
           buildWhen: (previous, current) =>
               previous.items.length != current.items.length ||
@@ -194,7 +201,7 @@ class _CartView extends StatelessWidget {
   }
 
   void _showCheckoutMessage(BuildContext context) {
-    _showMessage(context, 'هنكمل إتمام الطلب بعد تجهيز شاشة الشحن والدفع.');
+    Navigator.pushNamed(context, RouteNames.checkout);
   }
 
   void _showMessage(BuildContext context, String? message) {
@@ -382,7 +389,7 @@ class _CouponBoxState extends State<_CouponBox> {
             child: TextField(
               controller: _controller,
               textAlign: TextAlign.end,
-              textDirection: TextDirection.ltr,
+              textDirection: ui.TextDirection.ltr,
               decoration: const InputDecoration(
                 hintText: 'أدخل كود الخصم',
                 hintStyle: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),

@@ -13,14 +13,18 @@ import '../widgets/product_card.dart';
 import '../widgets/store_category_chip.dart';
 
 class StoreScreen extends StatelessWidget {
-  const StoreScreen({super.key});
+  final String? initialCategoryId;
+
+  const StoreScreen({super.key, this.initialCategoryId});
 
   @override
   Widget build(BuildContext context) {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: BlocProvider(
-        create: (_) => sl<StoreCubit>()..watchStore(),
+        create: (_) => sl<StoreCubit>()
+          ..selectCategory(initialCategoryId)
+          ..watchStore(),
         child: const _StoreView(),
       ),
     );

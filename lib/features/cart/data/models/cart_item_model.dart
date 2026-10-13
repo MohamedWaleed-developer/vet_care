@@ -35,4 +35,13 @@ class CartItemModel {
           : int.tryParse('$rawQuantity') ?? 1,
     );
   }
+
+  Map<String, dynamic> toMap() => {
+        'productId': productId,
+        'variant': variant,
+        'name': name,
+        'unitPrice': unitPrice,
+        'imageUrl': imageUrl,
+        'quantity': quantity,
+      };
 }

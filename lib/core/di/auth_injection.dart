@@ -17,6 +17,6 @@ Future<void> configureDependencies() async {
 
   // هذا السطر يستدعي كل الـ classes المعلّمة بـ @injectable / @lazySingleton
   // تلقائياً بعد تشغيل build_runner
-  await getIt.init();
+  getIt.init();
 }
 
