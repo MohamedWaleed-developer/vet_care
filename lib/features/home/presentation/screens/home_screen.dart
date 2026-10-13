@@ -24,17 +24,21 @@ import '../widgets/home_search_bar.dart';
 import '../widgets/my_pets_section.dart';
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  final bool scrollToPetsOnOpen;
+
+  const HomeScreen({super.key, this.scrollToPetsOnOpen = false});
 
   @override
   Widget build(BuildContext context) => BlocProvider(
         create: (_) => sl<StoreCubit>()..watchStore(),
-        child: const _HomeView(),
+        child: _HomeView(scrollToPetsOnOpen: scrollToPetsOnOpen),
       );
 }
 
 class _HomeView extends StatefulWidget {
-  const _HomeView();
+  final bool scrollToPetsOnOpen;
+
+  const _HomeView({required this.scrollToPetsOnOpen});
 
   @override
   State<_HomeView> createState() => _HomeViewState();
@@ -43,6 +47,7 @@ class _HomeView extends StatefulWidget {
 class _HomeViewState extends State<_HomeView> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _scrollController = ScrollController();
+  final _petsSectionKey = GlobalKey();
   List<AnimalModel> _pets = [];
   bool _isLoadingPets = true;
   int _selectedBottomNavIndex = 0;
@@ -51,6 +56,11 @@ class _HomeViewState extends State<_HomeView> {
   void initState() {
     super.initState();
     _loadPets();
+    if (widget.scrollToPetsOnOpen) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _scrollToPets();
+      });
+    }
   }
 
   @override
@@ -87,16 +97,19 @@ class _HomeViewState extends State<_HomeView> {
       setState(() => _selectedBottomNavIndex = 0);
       return;
     }
+    if (index == 2) {
+      setState(() => _selectedBottomNavIndex = index);
+      _scrollToPets();
+      return;
+    }
     setState(() => _selectedBottomNavIndex = index);
     switch (index) {
       case 1:
         await Navigator.pushNamed(context, RouteNames.store);
-      case 2:
-        await Navigator.pushNamed(context, RouteNames.cart);
       case 3:
         await Navigator.pushNamed(context, RouteNames.orders);
       case 4:
-        await _openVaccinations();
+        await Navigator.pushNamed(context, RouteNames.profile);
     }
     if (mounted) setState(() => _selectedBottomNavIndex = 0);
   }
@@ -129,11 +142,13 @@ class _HomeViewState extends State<_HomeView> {
   }
 
   void _scrollToPets() {
-    if (!_scrollController.hasClients) return;
-    _scrollController.animateTo(
-      _scrollController.position.maxScrollExtent,
+    final petsContext = _petsSectionKey.currentContext;
+    if (petsContext == null) return;
+    Scrollable.ensureVisible(
+      petsContext,
       duration: const Duration(milliseconds: 350),
       curve: Curves.easeOut,
+      alignment: 0.08,
     );
   }
 
@@ -150,7 +165,7 @@ class _HomeViewState extends State<_HomeView> {
           userName: name == null || name.isEmpty ? 'مرحبًا بك' : name,
           email: user?.email,
           onCategorySelected: (categoryId) => _openStore(categoryId: categoryId),
-          onProfileTap: () => _showMessage('صفحة البروفايل هتتضاف لاحقًا.'),
+          onProfileTap: () => Navigator.pushNamed(context, RouteNames.profile),
           onSettingsTap: () => _showMessage('صفحة الإعدادات هتتضاف لاحقًا.'),
           onFavoritesTap: () => _showMessage('صفحة المفضلة هتتضاف مع تنفيذ ميزتها.'),
         ),
@@ -176,9 +191,16 @@ class _HomeViewState extends State<_HomeView> {
                       SizedBox(height: 12.h),
                       _quickServices(),
                       SizedBox(height: 24.h),
-                      _sectionHeader('حيواناتك الأليفة', action: 'عرض الكل', onAction: _scrollToPets),
-                      SizedBox(height: 12.h),
-                      _petsSection(),
+                      KeyedSubtree(
+                        key: _petsSectionKey,
+                        child: Column(
+                          children: [
+                            _sectionHeader('حيواناتك الأليفة', action: 'عرض الكل', onAction: _scrollToPets),
+                            SizedBox(height: 12.h),
+                            _petsSection(),
+                          ],
+                        ),
+                      ),
                       SizedBox(height: 24.h),
                       _sectionHeader('منتجات مميزة', action: 'عرض المتجر', onAction: _openStore),
                       SizedBox(height: 12.h),

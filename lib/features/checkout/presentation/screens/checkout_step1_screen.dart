@@ -4,7 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/di/injection_container.dart';
 import '../../../../core/routing/route_names.dart';
+import '../../../profile/data/repositories/profile_repository.dart';
 import '../../data/models/checkout_draft.dart';
 
 class CheckoutStep1Screen extends StatefulWidget {
@@ -32,6 +34,16 @@ class _CheckoutStep1ScreenState extends State<CheckoutStep1Screen> {
     final user = FirebaseAuth.instance.currentUser;
     _name = TextEditingController(text: user?.displayName ?? '');
     _phone = TextEditingController(text: user?.phoneNumber ?? '');
+    _loadSavedProfile();
+  }
+
+  Future<void> _loadSavedProfile() async {
+    try {
+      final profile = await sl<ProfileRepository>().getProfile();
+      if (!mounted) return;
+      if (_name.text.trim().isEmpty) _name.text = profile.name;
+      if (_phone.text.trim().isEmpty) _phone.text = profile.phoneNumber;
+    } catch (_) {}
   }
 
   @override
