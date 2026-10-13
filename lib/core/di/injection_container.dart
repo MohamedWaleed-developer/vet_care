@@ -29,6 +29,9 @@ import '../../features/orders/data/datasources/orders_remote_data_source.dart';
 import '../../features/orders/data/repositories/orders_repository.dart';
 import '../../features/orders/presentation/cubit/orders_cubit.dart';
 import '../../features/checkout/presentation/cubit/checkout_cubit.dart';
+import '../../features/profile/data/datasources/profile_remote_data_source.dart';
+import '../../features/profile/data/repositories/profile_repository.dart';
+import '../../features/profile/presentation/cubit/profile_cubit.dart';
 
 final GetIt sl = GetIt.instance;
 
@@ -191,6 +194,24 @@ Future<void> setupDependencies() async {
         sl<PaymentSimulator>(),
         sl<CartRepository>(),
       ),
+    );
+  }
+  if (!sl.isRegistered<ProfileRemoteDataSource>()) {
+    sl.registerLazySingleton<ProfileRemoteDataSource>(
+      () => ProfileRemoteDataSource(
+        sl<FirebaseAuth>(),
+        sl<FirestoreService>(),
+      ),
+    );
+  }
+  if (!sl.isRegistered<ProfileRepository>()) {
+    sl.registerLazySingleton<ProfileRepository>(
+      () => ProfileRepository(sl<ProfileRemoteDataSource>()),
+    );
+  }
+  if (!sl.isRegistered<ProfileCubit>()) {
+    sl.registerFactory<ProfileCubit>(
+      () => ProfileCubit(sl<ProfileRepository>()),
     );
   }
 }

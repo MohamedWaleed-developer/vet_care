@@ -21,10 +21,13 @@ import 'features/orders/presentation/screens/order_details_screen.dart';
 import 'features/orders/presentation/screens/orders_screen.dart';
 import 'features/vaccinations/presentation/cubit/vaccinations_cubit.dart';
 import 'features/vaccinations/presentation/views/vaccinations_view.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'features/store/presentation/screens/product_details_screen.dart';
 import 'features/store/presentation/screens/search_screen.dart';
 import 'features/store/presentation/screens/store_screen.dart';
+import 'features/profile/data/models/profile_model.dart';
+import 'features/profile/presentation/cubit/profile_cubit.dart';
+import 'features/profile/presentation/screens/edit_profile_screen.dart';
+import 'features/profile/presentation/screens/profile_screen.dart';
 import 'features/splash/presentation/views/splash_view.dart';
 import 'firebase_options.dart';
 
@@ -79,7 +82,10 @@ class VetCareApp extends StatelessWidget {
             },
             home: const SplashScreen(),
             routes: {
-              '/home': (context) => const HomeScreen(), // مسار شاشة الهوم الرئيسية
+              '/home': (context) => HomeScreen(
+                    scrollToPetsOnOpen:
+                        ModalRoute.of(context)?.settings.arguments == 'pets',
+                  ),
               RouteNames.store: (context) => StoreScreen(
                     initialCategoryId: ModalRoute.of(context)?.settings.arguments as String?,
                   ),
@@ -88,6 +94,15 @@ class VetCareApp extends StatelessWidget {
                     productId: (ModalRoute.of(context)?.settings.arguments as String?) ?? '',
                   ),
               RouteNames.cart: (_) => const CartScreen(),
+              RouteNames.profile: (_) => const ProfileScreen(),
+              RouteNames.editProfile: (context) {
+                final profile = ModalRoute.of(context)?.settings.arguments;
+                if (profile is! ProfileModel) return const ProfileScreen();
+                return BlocProvider(
+                  create: (_) => sl<ProfileCubit>(),
+                  child: EditProfileScreen(profile: profile),
+                );
+              },
               RouteNames.checkout: (_) => const CheckoutStep1Screen(),
               RouteNames.payment: (context) => PaymentStep2Screen(
                     draft: ModalRoute.of(context)!.settings.arguments! as CheckoutDraft,

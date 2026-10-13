@@ -15,9 +15,9 @@ class HomeBottomNav extends StatelessWidget {
   static const _items = <_NavItem>[
     _NavItem('الرئيسية', Icons.home_rounded),
     _NavItem('المتجر', Icons.storefront_outlined),
-    _NavItem('السلة', Icons.shopping_bag_outlined),
+    _NavItem('أليفي', Icons.pets_outlined),
     _NavItem('طلباتي', Icons.receipt_long_outlined),
-    _NavItem('التطعيمات', Icons.vaccines_outlined),
+    _NavItem('حسابي', Icons.person_outline_rounded),
   ];
 
   @override
