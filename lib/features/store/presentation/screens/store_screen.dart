@@ -65,9 +65,7 @@ class _StoreView extends StatelessWidget {
           IconButton(
             tooltip: 'السلة',
             icon: const Icon(Icons.shopping_cart_outlined),
-            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('شاشة السلة هتتجهز في الخطوة التالية')),
-            ),
+            onPressed: () => Navigator.of(context).pushNamed(RouteNames.cart),
           ),
           const SizedBox(width: 8),
         ],

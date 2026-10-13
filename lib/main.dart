@@ -10,6 +10,7 @@ import 'core/services/notifications/notification_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/cubit/auth_cubit.dart';
 import 'features/home/presentation/screens/home_screen.dart';
+import 'features/cart/presentation/screens/cart_screen.dart';
 import 'core/routing/route_names.dart';
 import 'features/store/presentation/screens/product_details_screen.dart';
 import 'features/store/presentation/screens/search_screen.dart';
@@ -74,6 +75,7 @@ class VetCareApp extends StatelessWidget {
               RouteNames.productDetails: (context) => ProductDetailsScreen(
                     productId: (ModalRoute.of(context)?.settings.arguments as String?) ?? '',
                   ),
+              RouteNames.cart: (_) => const CartScreen(),
             },
           );
         },

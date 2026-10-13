@@ -21,6 +21,9 @@ import '../../features/store/data/repositories/store_repository.dart';
 import '../../features/store/presentation/cubit/store_cubit.dart';
 import '../../features/store/presentation/cubit/product_details_cubit.dart';
 import '../../features/store/presentation/cubit/search_cubit.dart';
+import '../../features/cart/data/datasources/cart_remote_data_source.dart';
+import '../../features/cart/data/repositories/cart_repository.dart';
+import '../../features/cart/presentation/cubit/cart_cubit.dart';
 
 final GetIt sl = GetIt.instance;
 
@@ -146,5 +149,18 @@ Future<void> setupDependencies() async {
   }
   if (!sl.isRegistered<SearchCubit>()) {
     sl.registerFactory<SearchCubit>(() => SearchCubit(sl<StoreRepository>()));
+  }
+  if (!sl.isRegistered<CartRemoteDataSource>()) {
+    sl.registerLazySingleton<CartRemoteDataSource>(
+      () => CartRemoteDataSource(sl<FirebaseFirestore>(), sl<FirebaseAuth>()),
+    );
+  }
+  if (!sl.isRegistered<CartRepository>()) {
+    sl.registerLazySingleton<CartRepository>(
+      () => CartRepository(sl<CartRemoteDataSource>()),
+    );
+  }
+  if (!sl.isRegistered<CartCubit>()) {
+    sl.registerFactory<CartCubit>(() => CartCubit(sl<CartRepository>()));
   }
 }
