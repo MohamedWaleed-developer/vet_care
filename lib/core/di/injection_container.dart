@@ -32,6 +32,9 @@ import '../../features/checkout/presentation/cubit/checkout_cubit.dart';
 import '../../features/profile/data/datasources/profile_remote_data_source.dart';
 import '../../features/profile/data/repositories/profile_repository.dart';
 import '../../features/profile/presentation/cubit/profile_cubit.dart';
+import '../../features/admin/data/datasources/admin_remote_data_source.dart';
+import '../../features/admin/data/repositories/admin_repository.dart';
+import '../../features/admin/presentation/cubit/admin_products_cubit.dart';
 
 final GetIt sl = GetIt.instance;
 
@@ -40,9 +43,7 @@ Future<void> setupDependencies() async {
   // Firebase Auth
   // =========================
   if (!sl.isRegistered<FirebaseAuth>()) {
-    sl.registerLazySingleton<FirebaseAuth>(
-          () => FirebaseAuth.instance,
-    );
+    sl.registerLazySingleton<FirebaseAuth>(() => FirebaseAuth.instance);
   }
 
   // =========================
@@ -50,7 +51,7 @@ Future<void> setupDependencies() async {
   // =========================
   if (!sl.isRegistered<FirebaseFirestore>()) {
     sl.registerLazySingleton<FirebaseFirestore>(
-          () => FirebaseFirestore.instance,
+      () => FirebaseFirestore.instance,
     );
   }
 
@@ -59,7 +60,7 @@ Future<void> setupDependencies() async {
   // =========================
   if (!sl.isRegistered<FirebaseMessaging>()) {
     sl.registerLazySingleton<FirebaseMessaging>(
-          () => FirebaseMessaging.instance,
+      () => FirebaseMessaging.instance,
     );
   }
 
@@ -67,9 +68,7 @@ Future<void> setupDependencies() async {
   // Dio
   // =========================
   if (!sl.isRegistered<Dio>()) {
-    sl.registerLazySingleton<Dio>(
-          () => DioClient().dio,
-    );
+    sl.registerLazySingleton<Dio>(() => DioClient().dio);
   }
 
   // =========================
@@ -77,9 +76,7 @@ Future<void> setupDependencies() async {
   // =========================
   if (!sl.isRegistered<FirebaseAuthService>()) {
     sl.registerLazySingleton<FirebaseAuthService>(
-          () => FirebaseAuthService(
-        sl<FirebaseAuth>(),
-      ),
+      () => FirebaseAuthService(sl<FirebaseAuth>()),
     );
   }
 
@@ -88,9 +85,7 @@ Future<void> setupDependencies() async {
   // =========================
   if (!sl.isRegistered<FirestoreService>()) {
     sl.registerLazySingleton<FirestoreService>(
-          () => FirestoreService(
-        sl<FirebaseFirestore>(),
-      ),
+      () => FirestoreService(sl<FirebaseFirestore>()),
     );
   }
 
@@ -99,9 +94,7 @@ Future<void> setupDependencies() async {
   // =========================
   if (!sl.isRegistered<NotificationService>()) {
     sl.registerLazySingleton<NotificationService>(
-          () => FcmService(
-        sl<FirebaseMessaging>(),
-      ),
+      () => FcmService(sl<FirebaseMessaging>()),
     );
   }
 
@@ -110,9 +103,7 @@ Future<void> setupDependencies() async {
   // =========================
   if (!sl.isRegistered<PetsRemoteDataSource>()) {
     sl.registerLazySingleton<PetsRemoteDataSource>(
-          () => PetsRemoteDataSource(
-        sl<FirebaseFirestore>(),
-      ),
+      () => PetsRemoteDataSource(sl<FirebaseFirestore>()),
     );
   }
 
@@ -121,9 +112,7 @@ Future<void> setupDependencies() async {
   // =========================
   if (!sl.isRegistered<PetsRepository>()) {
     sl.registerLazySingleton<PetsRepository>(
-          () => PetsRepository(
-        sl<PetsRemoteDataSource>(),
-      ),
+      () => PetsRepository(sl<PetsRemoteDataSource>()),
     );
   }
 
@@ -131,11 +120,7 @@ Future<void> setupDependencies() async {
   // Pets Cubit
   // =========================
   if (!sl.isRegistered<PetsCubit>()) {
-    sl.registerFactory<PetsCubit>(
-          () => PetsCubit(
-        sl<PetsRepository>(),
-      ),
-    );
+    sl.registerFactory<PetsCubit>(() => PetsCubit(sl<PetsRepository>()));
   }
   if (!sl.isRegistered<StoreRemoteDataSource>()) {
     sl.registerLazySingleton<StoreRemoteDataSource>(
@@ -198,10 +183,7 @@ Future<void> setupDependencies() async {
   }
   if (!sl.isRegistered<ProfileRemoteDataSource>()) {
     sl.registerLazySingleton<ProfileRemoteDataSource>(
-      () => ProfileRemoteDataSource(
-        sl<FirebaseAuth>(),
-        sl<FirestoreService>(),
-      ),
+      () => ProfileRemoteDataSource(sl<FirebaseAuth>(), sl<FirestoreService>()),
     );
   }
   if (!sl.isRegistered<ProfileRepository>()) {
@@ -212,6 +194,21 @@ Future<void> setupDependencies() async {
   if (!sl.isRegistered<ProfileCubit>()) {
     sl.registerFactory<ProfileCubit>(
       () => ProfileCubit(sl<ProfileRepository>()),
+    );
+  }
+  if (!sl.isRegistered<AdminRemoteDataSource>()) {
+    sl.registerLazySingleton<AdminRemoteDataSource>(
+      () => AdminRemoteDataSource(sl<FirebaseFirestore>(), sl<FirebaseAuth>()),
+    );
+  }
+  if (!sl.isRegistered<AdminRepository>()) {
+    sl.registerLazySingleton<AdminRepository>(
+      () => AdminRepository(sl<AdminRemoteDataSource>()),
+    );
+  }
+  if (!sl.isRegistered<AdminProductsCubit>()) {
+    sl.registerFactory<AdminProductsCubit>(
+      () => AdminProductsCubit(sl<AdminRepository>()),
     );
   }
 }

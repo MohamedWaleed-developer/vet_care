@@ -17,8 +17,7 @@ class RouteNames {
   static const String medicalRecords = '/medical-records';
 
   static const String vaccinations = '/vaccinations';
-  static const String vaccinationDetails =
-      '/vaccinations/details';
+  static const String vaccinationDetails = '/vaccinations/details';
 
   static const String services = '/services';
   static const String serviceDetails = '/services/details';

@@ -7,6 +7,7 @@ import '../../../../core/di/injection_container.dart';
 import '../../../../core/routing/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_loader.dart';
+import '../../../admin/data/repositories/admin_repository.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../auth/presentation/cubit/auth_state.dart';
 import '../../../onboarding/presentation/screens/onboarding_screen.dart';
@@ -20,9 +21,9 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => BlocProvider(
-        create: (_) => sl<ProfileCubit>()..loadProfile(),
-        child: const _ProfileView(),
-      );
+    create: (_) => sl<ProfileCubit>()..loadProfile(),
+    child: const _ProfileView(),
+  );
 }
 
 class _ProfileView extends StatelessWidget {
@@ -30,162 +31,182 @@ class _ProfileView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Directionality(
-        textDirection: TextDirection.rtl,
-        child: Scaffold(
-          backgroundColor: const Color(0xFFF8F9FA),
-          body: SafeArea(
-            child: BlocBuilder<ProfileCubit, ProfileState>(
-              builder: (context, state) {
-                if (state.status == ProfileStatus.loading ||
-                    state.status == ProfileStatus.initial) {
-                  return const AppLoader();
-                }
-                if (state.status == ProfileStatus.failure &&
-                    state.profile == null) {
-                  return _ProfileLoadError(
-                    message: state.errorMessage ?? 'تعذر تحميل الملف الشخصي.',
-                  );
-                }
+    textDirection: TextDirection.rtl,
+    child: Scaffold(
+      backgroundColor: const Color(0xFFF8F9FA),
+      body: SafeArea(
+        child: BlocBuilder<ProfileCubit, ProfileState>(
+          builder: (context, state) {
+            if (state.status == ProfileStatus.loading ||
+                state.status == ProfileStatus.initial) {
+              return const AppLoader();
+            }
+            if (state.status == ProfileStatus.failure &&
+                state.profile == null) {
+              return _ProfileLoadError(
+                message: state.errorMessage ?? 'تعذر تحميل الملف الشخصي.',
+              );
+            }
 
-                final profile = state.profile;
-                if (profile == null) return const AppLoader();
+            final profile = state.profile;
+            if (profile == null) return const AppLoader();
 
-                return Column(
-                  children: [
-                    Expanded(
-                      child: SingleChildScrollView(
-                        child: Column(
-                          children: [
-                            _ProfileHeader(
-                              name: profile.name,
-                              phoneNumber: profile.phoneNumber,
-                              photoBytes: profile.photoBytes,
-                              onEdit: () => _editProfile(context),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 6,
-                              ),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(20),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.02),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 3),
-                                    ),
-                                  ],
-                                ),
-                                child: Material(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(20),
-                                  clipBehavior: Clip.antiAlias,
-                                  child: Column(
-                                  children: [
-                                    ProfileMenuItem(
-                                      title: 'عناوين التوصيل',
-                                      subtitle: 'إدارة عناوين الشحن الخاصة بك',
-                                      icon: Icons.location_on_outlined,
-                                      onTap: () => _showComingSoon(
-                                        context,
-                                        'إدارة عناوين التوصيل',
-                                      ),
-                                    ),
-                                    ProfileMenuItem(
-                                      title: 'طرق الدفع',
-                                      subtitle: 'إدارة طرق الدفع الخاصة بك',
-                                      icon: Icons.credit_card_outlined,
-                                      onTap: () => _showComingSoon(
-                                        context,
-                                        'طرق الدفع المحفوظة',
-                                      ),
-                                    ),
-                                    ProfileMenuItem(
-                                      title: 'حيواناتي الأليفة',
-                                      subtitle: 'عرض حيواناتك وإدارتها',
-                                      icon: Icons.pets_outlined,
-                                      onTap: () => Navigator.of(context)
-                                          .pushNamed(
-                                            RouteNames.home,
-                                            arguments: 'pets',
-                                          ),
-                                    ),
-                                    ProfileMenuItem(
-                                      title: 'سجل التحصينات اللقاحية',
-                                      subtitle: 'مواعيد اللقاحات القادمة والسابقة',
-                                      icon: Icons.calendar_month_outlined,
-                                      onTap: () => _showComingSoon(
-                                        context,
-                                        'سجل التحصينات',
-                                      ),
-                                    ),
-                                    ProfileMenuItem(
-                                      title: 'لغة التطبيق',
-                                      subtitle: 'العربية',
-                                      icon: Icons.language_outlined,
-                                      onTap: () => _showComingSoon(
-                                        context,
-                                        'تغيير لغة التطبيق',
-                                      ),
-                                    ),
-                                    ProfileMenuItem(
-                                      title: 'مركز المساعدة والدعم',
-                                      subtitle: 'الأسئلة الشائعة والتواصل معنا',
-                                      icon: Icons.headset_mic_outlined,
-                                      onTap: () => _showComingSoon(
-                                        context,
-                                        'مركز المساعدة',
-                                      ),
-                                    ),
-                                    ProfileMenuItem(
-                                      title: 'تقييم التطبيق',
-                                      subtitle: 'رأيك يساعدنا على التطوير',
-                                      icon: Icons.star_outline_rounded,
-                                      onTap: () => _showComingSoon(
-                                        context,
-                                        'تقييم التطبيق',
-                                      ),
-                                    ),
-                                    ProfileMenuItem(
-                                      title: 'تسجيل الخروج',
-                                      subtitle: 'الخروج الآمن من حسابك الحالي',
-                                      icon: Icons.logout_rounded,
-                                      isDestructive: true,
-                                      showDivider: false,
-                                      onTap: () => _confirmLogout(context),
-                                    ),
-                                  ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                          ],
+            return Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        _ProfileHeader(
+                          name: profile.name,
+                          phoneNumber: profile.phoneNumber,
+                          photoBytes: profile.photoBytes,
+                          onEdit: () => _editProfile(context),
                         ),
-                      ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 6,
+                          ),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.02),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Material(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              clipBehavior: Clip.antiAlias,
+                              child: Column(
+                                children: [
+                                  FutureBuilder<bool>(
+                                    future: sl<AdminRepository>().isAdmin(),
+                                    builder: (context, snapshot) {
+                                      if (snapshot.data != true) {
+                                        return const SizedBox.shrink();
+                                      }
+                                      return ProfileMenuItem(
+                                        title: 'إدارة المنتجات',
+                                        subtitle: 'إضافة وتعديل منتجات المتجر',
+                                        icon:
+                                            Icons.admin_panel_settings_outlined,
+                                        onTap: () => Navigator.of(
+                                          context,
+                                        ).pushNamed(RouteNames.admin),
+                                      );
+                                    },
+                                  ),
+                                  ProfileMenuItem(
+                                    title: 'عناوين التوصيل',
+                                    subtitle: 'إدارة عناوين الشحن الخاصة بك',
+                                    icon: Icons.location_on_outlined,
+                                    onTap: () => _showComingSoon(
+                                      context,
+                                      'إدارة عناوين التوصيل',
+                                    ),
+                                  ),
+                                  ProfileMenuItem(
+                                    title: 'طرق الدفع',
+                                    subtitle: 'إدارة طرق الدفع الخاصة بك',
+                                    icon: Icons.credit_card_outlined,
+                                    onTap: () => _showComingSoon(
+                                      context,
+                                      'طرق الدفع المحفوظة',
+                                    ),
+                                  ),
+                                  ProfileMenuItem(
+                                    title: 'حيواناتي الأليفة',
+                                    subtitle: 'عرض حيواناتك وإدارتها',
+                                    icon: Icons.pets_outlined,
+                                    onTap: () =>
+                                        Navigator.of(context).pushNamed(
+                                          RouteNames.home,
+                                          arguments: 'pets',
+                                        ),
+                                  ),
+                                  ProfileMenuItem(
+                                    title: 'سجل التحصينات اللقاحية',
+                                    subtitle:
+                                        'مواعيد اللقاحات القادمة والسابقة',
+                                    icon: Icons.calendar_month_outlined,
+                                    onTap: () => _showComingSoon(
+                                      context,
+                                      'سجل التحصينات',
+                                    ),
+                                  ),
+                                  ProfileMenuItem(
+                                    title: 'لغة التطبيق',
+                                    subtitle: 'العربية',
+                                    icon: Icons.language_outlined,
+                                    onTap: () => _showComingSoon(
+                                      context,
+                                      'تغيير لغة التطبيق',
+                                    ),
+                                  ),
+                                  ProfileMenuItem(
+                                    title: 'مركز المساعدة والدعم',
+                                    subtitle: 'الأسئلة الشائعة والتواصل معنا',
+                                    icon: Icons.headset_mic_outlined,
+                                    onTap: () => _showComingSoon(
+                                      context,
+                                      'مركز المساعدة',
+                                    ),
+                                  ),
+                                  ProfileMenuItem(
+                                    title: 'تقييم التطبيق',
+                                    subtitle: 'رأيك يساعدنا على التطوير',
+                                    icon: Icons.star_outline_rounded,
+                                    onTap: () => _showComingSoon(
+                                      context,
+                                      'تقييم التطبيق',
+                                    ),
+                                  ),
+                                  const _AdminProductsMenuItem(),
+                                  ProfileMenuItem(
+                                    title: 'تسجيل الخروج',
+                                    subtitle: 'الخروج الآمن من حسابك الحالي',
+                                    icon: Icons.logout_rounded,
+                                    isDestructive: true,
+                                    showDivider: false,
+                                    onTap: () => _confirmLogout(context),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
                     ),
-                    HomeBottomNav(
-                      currentIndex: 4,
-                      onTap: (index) => _navigateFromBottomNav(context, index),
-                    ),
-                  ],
-                );
-              },
-            ),
-          ),
+                  ),
+                ),
+                HomeBottomNav(
+                  currentIndex: 4,
+                  onTap: (index) => _navigateFromBottomNav(context, index),
+                ),
+              ],
+            );
+          },
         ),
-      );
+      ),
+    ),
+  );
 
   Future<void> _editProfile(BuildContext context) async {
     final profile = context.read<ProfileCubit>().state.profile;
     if (profile == null) return;
 
-    final emailVerificationSent = await Navigator.of(context).pushNamed<dynamic>(
-      RouteNames.editProfile,
-      arguments: profile,
-    ) == true;
+    final emailVerificationSent =
+        await Navigator.of(
+          context,
+        ).pushNamed<dynamic>(RouteNames.editProfile, arguments: profile) ==
+        true;
     if (!context.mounted) return;
     await context.read<ProfileCubit>().loadProfile();
     if (context.mounted) context.read<AuthCubit>().checkCurrentUser();
@@ -213,9 +234,7 @@ class _ProfileView extends StatelessWidget {
             ),
             FilledButton(
               onPressed: () => Navigator.pop(dialogContext, true),
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.error,
-              ),
+              style: FilledButton.styleFrom(backgroundColor: AppColors.error),
               child: const Text('تسجيل الخروج'),
             ),
           ],
@@ -245,10 +264,9 @@ class _ProfileView extends StatelessWidget {
       _ => RouteNames.profile,
     };
     if (route == RouteNames.profile) return;
-    Navigator.of(context).pushReplacementNamed(
-      route,
-      arguments: index == 2 ? 'pets' : null,
-    );
+    Navigator.of(
+      context,
+    ).pushReplacementNamed(route, arguments: index == 2 ? 'pets' : null);
   }
 
   void _showComingSoon(BuildContext context, String feature) {
@@ -259,6 +277,26 @@ class _ProfileView extends StatelessWidget {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(message)));
+  }
+}
+
+class _AdminProductsMenuItem extends StatelessWidget {
+  const _AdminProductsMenuItem();
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+      future: sl<AdminRepository>().isAdmin(),
+      builder: (context, snapshot) {
+        if (snapshot.data != true) return const SizedBox.shrink();
+        return ProfileMenuItem(
+          title: 'إدارة المنتجات',
+          subtitle: 'إضافة المنتجات وتعديلها وإيقافها',
+          icon: Icons.inventory_2_outlined,
+          onTap: () => Navigator.of(context).pushNamed(RouteNames.admin),
+        );
+      },
+    );
   }
 }
 
@@ -299,8 +337,9 @@ class _ProfileHeader extends StatelessWidget {
             child: CircleAvatar(
               radius: 42,
               backgroundColor: Colors.white,
-              backgroundImage:
-                  photoBytes == null ? null : MemoryImage(photoBytes!),
+              backgroundImage: photoBytes == null
+                  ? null
+                  : MemoryImage(photoBytes!),
               child: photoBytes == null
                   ? const Icon(
                       Icons.person_outline_rounded,
@@ -332,7 +371,11 @@ class _ProfileHeader extends StatelessWidget {
           const SizedBox(height: 16),
           OutlinedButton.icon(
             onPressed: onEdit,
-            icon: const Icon(Icons.edit_outlined, size: 16, color: primaryColor),
+            icon: const Icon(
+              Icons.edit_outlined,
+              size: 16,
+              color: primaryColor,
+            ),
             label: const Text(
               'تعديل الملف الشخصي',
               style: TextStyle(
@@ -363,19 +406,19 @@ class _ProfileLoadError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(message, textAlign: TextAlign.center),
-              const SizedBox(height: 12),
-              FilledButton(
-                onPressed: () => context.read<ProfileCubit>().loadProfile(),
-                child: const Text('إعادة المحاولة'),
-              ),
-            ],
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(message, textAlign: TextAlign.center),
+          const SizedBox(height: 12),
+          FilledButton(
+            onPressed: () => context.read<ProfileCubit>().loadProfile(),
+            child: const Text('إعادة المحاولة'),
           ),
-        ),
-      );
+        ],
+      ),
+    ),
+  );
 }

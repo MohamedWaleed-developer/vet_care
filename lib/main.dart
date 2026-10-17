@@ -24,6 +24,7 @@ import 'features/vaccinations/presentation/views/vaccinations_view.dart';
 import 'features/store/presentation/screens/product_details_screen.dart';
 import 'features/store/presentation/screens/search_screen.dart';
 import 'features/store/presentation/screens/store_screen.dart';
+import 'features/admin/presentation/screens/admin_products_screen.dart';
 import 'features/profile/data/models/profile_model.dart';
 import 'features/profile/presentation/cubit/profile_cubit.dart';
 import 'features/profile/presentation/screens/edit_profile_screen.dart';
@@ -34,9 +35,7 @@ import 'firebase_options.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   await setupDependencies();
   await configureDependencies();
@@ -74,25 +73,28 @@ class VetCareApp extends StatelessWidget {
             theme: AppTheme.lightTheme,
             builder: (context, widget) {
               return MediaQuery(
-                data: MediaQuery.of(context).copyWith(
-                  textScaler: TextScaler.noScaling,
-                ),
+                data: MediaQuery.of(
+                  context,
+                ).copyWith(textScaler: TextScaler.noScaling),
                 child: widget ?? const SizedBox.shrink(),
               );
             },
             home: const SplashScreen(),
             routes: {
               '/home': (context) => HomeScreen(
-                    scrollToPetsOnOpen:
-                        ModalRoute.of(context)?.settings.arguments == 'pets',
-                  ),
+                scrollToPetsOnOpen:
+                    ModalRoute.of(context)?.settings.arguments == 'pets',
+              ),
               RouteNames.store: (context) => StoreScreen(
-                    initialCategoryId: ModalRoute.of(context)?.settings.arguments as String?,
-                  ),
+                initialCategoryId:
+                    ModalRoute.of(context)?.settings.arguments as String?,
+              ),
               RouteNames.search: (_) => const SearchScreen(),
               RouteNames.productDetails: (context) => ProductDetailsScreen(
-                    productId: (ModalRoute.of(context)?.settings.arguments as String?) ?? '',
-                  ),
+                productId:
+                    (ModalRoute.of(context)?.settings.arguments as String?) ??
+                    '',
+              ),
               RouteNames.cart: (_) => const CartScreen(),
               RouteNames.profile: (_) => const ProfileScreen(),
               RouteNames.editProfile: (context) {
@@ -105,24 +107,29 @@ class VetCareApp extends StatelessWidget {
               },
               RouteNames.checkout: (_) => const CheckoutStep1Screen(),
               RouteNames.payment: (context) => PaymentStep2Screen(
-                    draft: ModalRoute.of(context)!.settings.arguments! as CheckoutDraft,
-                  ),
+                draft:
+                    ModalRoute.of(context)!.settings.arguments!
+                        as CheckoutDraft,
+              ),
               RouteNames.paymentSuccess: (context) => PaymentSuccessScreen(
-                    order: ModalRoute.of(context)!.settings.arguments! as OrderModel,
-                  ),
+                order:
+                    ModalRoute.of(context)!.settings.arguments! as OrderModel,
+              ),
               RouteNames.paymentFailed: (context) => PaymentFailedScreen(
-                    message: ModalRoute.of(context)?.settings.arguments as String?,
-                  ),
+                message: ModalRoute.of(context)?.settings.arguments as String?,
+              ),
               RouteNames.orders: (_) => const OrdersScreen(),
               RouteNames.orderDetails: (context) => OrderDetailsScreen(
-                    order: ModalRoute.of(context)!.settings.arguments! as OrderModel,
-                  ),
+                order:
+                    ModalRoute.of(context)!.settings.arguments! as OrderModel,
+              ),
               RouteNames.vaccinations: (context) => BlocProvider(
-                    create: (_) => sl<VaccinationsCubit>(),
-                    child: VaccinationsView(
-                      petId: ModalRoute.of(context)!.settings.arguments! as String,
-                    ),
-                  ),
+                create: (_) => sl<VaccinationsCubit>(),
+                child: VaccinationsView(
+                  petId: ModalRoute.of(context)!.settings.arguments! as String,
+                ),
+              ),
+              RouteNames.admin: (_) => const AdminProductsScreen(),
             },
           );
         },
