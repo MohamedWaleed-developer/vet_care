@@ -12,9 +12,11 @@ class SheepVaccinationCalculator {
   // الجدري            → كل سنة
   // FMD              → كل 6 شهور
   // المعوي            → أول يونيو من كل سنة
-  // الدموي/الطاعون   → أول مارس من كل سنة
+  // الدموي            → أول مارس من كل سنة
+  // الطاعون           → أول مارس من كل سنة
   //
   // أقل فرق بين أي تطعيمين = 15 يوم
+  // (يعني الطاعون بيجي بعد الدموي بـ 15 يوم: 16 مارس)
   // ---------------------------------------------------------
   static List<VaccinationModel> calculate({
     // ID الخاص بالحيوان
@@ -83,12 +85,13 @@ class SheepVaccinationCalculator {
     );
 
     // =========================================================
-    // التطعيمات الموسمية
+    // التطعيمات الموسمية (دموي / طاعون / معوي)
     // =========================================================
 
-    _addSeasonalVaccines(
+    VaccinationDateHelper.addSeasonalVaccines(
       schedule,
       petId: petId,
+      idPrefix: 'vac_s',
       gapDays: 15,
     );
 
@@ -101,80 +104,5 @@ class SheepVaccinationCalculator {
     );
 
     return schedule;
-  }
-
-  // ===========================================================
-  // إضافة التطعيمات الموسمية
-  // ===========================================================
-  static void _addSeasonalVaccines(
-      List<VaccinationModel> schedule, {
-        required String petId,
-        required int gapDays,
-      }) {
-    final DateTime now = DateTime.now();
-
-    // =========================================================
-    // التطعيم المعوي
-    // الموعد الأساسي: أول يونيو
-    // =========================================================
-
-    final int juneYear =
-    (now.month > 6 ||
-        (now.month == 6 && now.day > 1))
-        ? now.year + 1
-        : now.year;
-
-    DateTime juneDate = DateTime(
-      juneYear,
-      6,
-      1,
-    );
-
-    juneDate = VaccinationDateHelper.adjustDateForGap(
-      juneDate,
-      schedule,
-      gapDays: gapDays,
-    );
-
-    schedule.add(
-      VaccinationModel(
-        id: 'vac_s_june_${juneDate.millisecondsSinceEpoch}',
-        petId: petId,
-        vaccineName: 'تطعيم معوي (موسمي)',
-        dueDate: juneDate,
-      ),
-    );
-
-    // =========================================================
-    // التطعيم الدموي والطاعون
-    // الموعد الأساسي: أول مارس
-    // =========================================================
-
-    final int marchYear =
-    (now.month > 3 ||
-        (now.month == 3 && now.day > 1))
-        ? now.year + 1
-        : now.year;
-
-    DateTime marchDate = DateTime(
-      marchYear,
-      3,
-      1,
-    );
-
-    marchDate = VaccinationDateHelper.adjustDateForGap(
-      marchDate,
-      schedule,
-      gapDays: gapDays,
-    );
-
-    schedule.add(
-      VaccinationModel(
-        id: 'vac_s_march_${marchDate.millisecondsSinceEpoch}',
-        petId: petId,
-        vaccineName: 'تطعيم دموي وطاعون (موسمي)',
-        dueDate: marchDate,
-      ),
-    );
   }
 }
