@@ -1,3 +1,4 @@
+
 class RouteNames {
   RouteNames._();
 
@@ -17,8 +18,7 @@ class RouteNames {
   static const String medicalRecords = '/medical-records';
 
   static const String vaccinations = '/vaccinations';
-  static const String vaccinationDetails =
-      '/vaccinations/details';
+  static const String vaccinationDetails = '/vaccinations/details';
 
   static const String services = '/services';
   static const String serviceDetails = '/services/details';
@@ -47,4 +47,7 @@ class RouteNames {
   static const String settings = '/settings';
 
   static const String admin = '/admin';
+  static const String adminProducts = '/admin/products';
+  static const String adminOrders = '/admin/orders';
+  static const String adminNotifications = '/admin/notifications';
 }

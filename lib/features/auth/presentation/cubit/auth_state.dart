@@ -8,8 +8,9 @@ class AuthLoading extends AuthState {}
 
 class AuthSuccess extends AuthState {
   final UserModel user;
+  final bool isAdmin;
 
-  AuthSuccess(this.user);
+  AuthSuccess(this.user, {this.isAdmin = false});
 }
 
 class AuthUnauthenticated extends AuthState {}
