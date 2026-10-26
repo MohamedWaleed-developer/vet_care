@@ -16,8 +16,8 @@ import '../../../pets/presentation/screens/pet_category_screen.dart';
 import '../../../store/data/models/product_model.dart';
 import '../../../store/presentation/cubit/store_cubit.dart';
 import '../../../store/presentation/cubit/store_state.dart';
-import '../../../vaccinations/presentation/cubit/vaccinations_cubit.dart';
-import '../../../vaccinations/presentation/views/vaccinations_view.dart';
+import '../../../vaccinations/data/calculators/vaccination/vaccination_calculator.dart';
+import '../../../vaccinations/presentation/views/pet_details_view.dart';
 import '../widgets/home_bottom_nav.dart';
 import '../widgets/home_drawer.dart';
 import '../widgets/home_search_bar.dart';
@@ -138,16 +138,18 @@ class _HomeViewState extends State<_HomeView> {
     final selectedPet = pet ?? (_pets.isEmpty ? null : _pets.first);
 
     if (selectedPet == null) {
-      _showMessage('أضف حيوانًا أليفًا أولًا لعرض تطعيماته.');
+      _showMessage('أضف حيوانًا أليفًا أولًا لعرض تفاصيله.');
       return;
     }
+    final imageBytes = PetImageLocalStorage.instance.getImage(selectedPet.id);
 
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => BlocProvider<VaccinationsCubit>(
-          create: (_) => sl<VaccinationsCubit>(),
-          child: VaccinationsView(petId: selectedPet.id),
+        builder: (_) => PetDetailsView(
+          animal: selectedPet,
+          scheduleBuilder: VaccinationCalculator.calculateForAnimal,
+          image: imageBytes == null ? null : MemoryImage(imageBytes),
         ),
       ),
     );
@@ -286,6 +288,7 @@ class _HomeViewState extends State<_HomeView> {
               'أهلًا بك،',
               style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
             ),
+            const Text('أهلًا بك،', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
             Text(
               name == null || name.isEmpty ? 'في Vet Care' : name,
               maxLines: 1,
@@ -295,6 +298,7 @@ class _HomeViewState extends State<_HomeView> {
                 fontWeight: FontWeight.bold,
                 color: AppColors.mainText,
               ),
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.mainText),
             ),
           ],
         ),
@@ -346,6 +350,13 @@ class _HomeViewState extends State<_HomeView> {
             backgroundColor: const Color(0xFFF97316),
             foregroundColor: Colors.white,
           ),
+        const Text('كل احتياجات أليفك في مكان واحد', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.white)),
+        const SizedBox(height: 5),
+        const Text('منتجات مختارة لرعاية أفضل كل يوم', style: TextStyle(fontSize: 12, color: Color(0xFFE2E8F0))),
+        const SizedBox(height: 14),
+        FilledButton(
+          onPressed: _openStore,
+          style: FilledButton.styleFrom(backgroundColor: const Color(0xFFF97316), foregroundColor: Colors.white),
           child: const Text('تسوق الآن'),
         ),
       ],
@@ -382,6 +393,10 @@ class _HomeViewState extends State<_HomeView> {
         AppColors.primaryLight,
         () => Navigator.pushNamed(context, RouteNames.orders),
       ),
+      _service('المتجر', Icons.medication_outlined, const Color(0xFFEF4444), const Color(0xFFFFECEF), _openStore),
+      _service('التطعيمات', Icons.verified_user_outlined, const Color(0xFF2563EB), const Color(0xFFEFF6FF), _openVaccinations),
+      _service('الخدمات', Icons.support_agent_outlined, const Color(0xFFF59E0B), const Color(0xFFFEF3C7), () => _showMessage('الخدمات البيطرية ستتوفر قريبًا.')),
+      _service('طلباتي', Icons.local_shipping_outlined, AppColors.primaryDark, AppColors.primaryLight, () => Navigator.pushNamed(context, RouteNames.orders)),
     ],
   );
 
@@ -467,6 +482,8 @@ class _HomeViewState extends State<_HomeView> {
         );
       }
 
+        return const SizedBox(height: 170, child: Center(child: CircularProgressIndicator()));
+      }
       if (state.products.isEmpty) {
         return const Padding(
           padding: EdgeInsets.symmetric(vertical: 18),
@@ -491,6 +508,7 @@ class _HomeViewState extends State<_HomeView> {
             ),
             itemBuilder: (context, index) =>
                 _featuredProductCard(products[index]),
+            itemBuilder: (context, index) => _featuredProductCard(products[index]),
           );
         },
       );
@@ -507,6 +525,7 @@ class _HomeViewState extends State<_HomeView> {
         RouteNames.productDetails,
         arguments: product.id,
       ),
+      onTap: () => Navigator.pushNamed(context, RouteNames.productDetails, arguments: product.id),
       child: Padding(
         padding: const EdgeInsets.all(9),
         child: Column(
@@ -539,6 +558,13 @@ class _HomeViewState extends State<_HomeView> {
                     ),
                   ),
                 ),
+            Expanded(child: AppImage(imageUrl: product.imageUrl, borderRadius: BorderRadius.circular(12))),
+            const SizedBox(height: 8),
+            Text(product.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(child: Text('${product.price} ج.م', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryDark))),
                 IconButton.filled(
                   visualDensity: VisualDensity.compact,
                   onPressed: () => _addProductToCart(context, product),
@@ -593,4 +619,14 @@ class _HomeViewState extends State<_HomeView> {
         ),
     ],
   );
+}
+  Widget _sectionHeader(String title, {String? action, VoidCallback? onAction}) =>
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.mainText)),
+          if (action != null)
+            TextButton(onPressed: onAction, child: Text(action, style: const TextStyle(color: AppColors.primaryDark, fontSize: 12))),
+        ],
+      );
 }
