@@ -1,3 +1,4 @@
+
 class RouteNames {
   RouteNames._();
 
@@ -46,4 +47,7 @@ class RouteNames {
   static const String settings = '/settings';
 
   static const String admin = '/admin';
+  static const String adminProducts = '/admin/products';
+  static const String adminOrders = '/admin/orders';
+  static const String adminNotifications = '/admin/notifications';
 }

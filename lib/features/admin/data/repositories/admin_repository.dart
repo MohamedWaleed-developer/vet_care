@@ -1,3 +1,4 @@
+import '../../../orders/data/models/order_model.dart';
 import '../../../store/data/models/category_model.dart';
 import '../../../store/data/models/product_model.dart';
 import '../datasources/admin_remote_data_source.dart';
@@ -14,6 +15,14 @@ class AdminRepository {
 
   Stream<List<CategoryModel>> watchCategories() =>
       _remoteDataSource.watchCategories();
+
+  Stream<List<OrderModel>> watchAllOrders() =>
+      _remoteDataSource.watchAllOrders();
+
+  Future<void> updateOrderStatus({
+    required String orderId,
+    required String status,
+  }) => _remoteDataSource.updateOrderStatus(orderId: orderId, status: status);
 
   Future<void> createProduct({
     required String name,

@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../../core/constants/firebase_collections.dart';
+import '../../../orders/data/models/order_model.dart';
 import '../../../store/data/models/category_model.dart';
 import '../../../store/data/models/product_model.dart';
 
@@ -14,6 +15,7 @@ class AdminRemoteDataSource {
   Future<bool> isAdmin() async {
     final user = _auth.currentUser;
     if (user == null) return false;
+
     final token = await user.getIdTokenResult(true);
     return token.claims?['admin'] == true;
   }
@@ -26,6 +28,7 @@ class AdminRemoteDataSource {
 
   Future<void> _ensureAdmin() async {
     _ensureSignedIn();
+
     if (!await isAdmin()) {
       throw StateError('ليس لديك صلاحية الإدارة.');
     }
@@ -55,6 +58,49 @@ class AdminRemoteDataSource {
         );
   }
 
+  Stream<List<OrderModel>> watchAllOrders() async* {
+    await _ensureAdmin();
+
+    yield* _firestore.collection(FirebaseCollections.orders).snapshots().map((
+      snapshot,
+    ) {
+      final orders = snapshot.docs
+          .map((doc) => OrderModel.fromMap(doc.id, doc.data()))
+          .toList();
+
+      orders.sort((a, b) {
+        return (b.createdAt ?? DateTime(1970)).compareTo(
+          a.createdAt ?? DateTime(1970),
+        );
+      });
+
+      return orders;
+    });
+  }
+
+  Future<void> updateOrderStatus({
+    required String orderId,
+    required String status,
+  }) async {
+    await _ensureAdmin();
+
+    const allowedStatuses = {
+      'confirmed',
+      'preparing',
+      'shipping',
+      'delivered',
+      'cancelled',
+    };
+
+    if (!allowedStatuses.contains(status)) {
+      throw ArgumentError('حالة الطلب غير مسموح بها.');
+    }
+
+    await _firestore.collection(FirebaseCollections.orders).doc(orderId).update(
+      {'status': status, 'updatedAt': FieldValue.serverTimestamp()},
+    );
+  }
+
   Future<void> createProduct({
     required String name,
     required String description,
@@ -71,6 +117,7 @@ class AdminRemoteDataSource {
     await _ensureAdmin();
 
     final images = _normalizeImages(imageUrl, imageUrls);
+
     await _firestore.collection(FirebaseCollections.products).add({
       'name': name.trim(),
       'description': description.trim(),
@@ -108,6 +155,7 @@ class AdminRemoteDataSource {
     await _ensureAdmin();
 
     final images = _normalizeImages(imageUrl, imageUrls);
+
     await _firestore
         .collection(FirebaseCollections.products)
         .doc(existing.id)
@@ -135,6 +183,7 @@ class AdminRemoteDataSource {
     required bool isAvailable,
   }) async {
     await _ensureAdmin();
+
     await _firestore
         .collection(FirebaseCollections.products)
         .doc(productId)
@@ -147,6 +196,7 @@ class AdminRemoteDataSource {
 
   Future<void> deleteProduct(String productId) async {
     await _ensureAdmin();
+
     await _firestore
         .collection(FirebaseCollections.products)
         .doc(productId)
@@ -155,14 +205,21 @@ class AdminRemoteDataSource {
 
   List<String> _normalizeImages(String imageUrl, List<String> imageUrls) {
     final urls = <String>[];
+
     for (final url in imageUrls) {
       final trimmed = url.trim();
-      if (trimmed.isNotEmpty && !urls.contains(trimmed)) urls.add(trimmed);
+
+      if (trimmed.isNotEmpty && !urls.contains(trimmed)) {
+        urls.add(trimmed);
+      }
     }
+
     final primary = imageUrl.trim();
+
     if (primary.isNotEmpty && !urls.contains(primary)) {
       urls.insert(0, primary);
     }
+
     return urls;
   }
 }
