@@ -31,8 +31,8 @@ void main() {
       buildTestApp(
         CartSummary(
           subtotal: 100,
-          deliveryFee: CartState.deliveryFee,
-          total: 100 + CartState.deliveryFee,
+          deliveryFee: CartState.standardDeliveryFee,
+          total: 100 + CartState.standardDeliveryFee,
           isBusy: false,
           onCheckout: () {},
         ),
@@ -41,6 +41,7 @@ void main() {
 
     expect(find.text('100.00 ج.م'), findsOneWidget);
     expect(find.text('15.00 ج.م'), findsOneWidget);
+    expect(find.text('التوصيل العادي'), findsOneWidget);
     expect(find.text('115.00 ج.م'), findsOneWidget);
   });
 }

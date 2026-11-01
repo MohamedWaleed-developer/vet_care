@@ -42,10 +42,16 @@ class ProductCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: SizedBox(
+                  child: Container(
                     width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    clipBehavior: Clip.antiAlias,
                     child: AppImage(
                       imageUrl: product.imageUrl,
+                      fit: BoxFit.contain,
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),

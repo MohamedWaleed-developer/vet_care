@@ -1,0 +1,875 @@
+﻿
+========== lib\main.dart ==========
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+
+import 'core/di/auth_injection.dart';
+import 'core/di/injection_container.dart';
+import 'core/routing/route_names.dart';
+import 'core/services/notifications/notification_service.dart';
+import 'core/theme/app_theme.dart';
+import 'features/admin/presentation/screens/admin_dashboard_screen.dart';
+import 'features/admin/presentation/screens/admin_products_screen.dart';
+import 'features/notifications/presentation/screens/notifications_screen.dart';
+import 'features/auth/presentation/cubit/auth_cubit.dart';
+import 'features/cart/presentation/screens/cart_screen.dart';
+import 'features/checkout/data/models/checkout_draft.dart';
+import 'features/checkout/presentation/screens/checkout_step1_screen.dart';
+import 'features/checkout/presentation/screens/payment_result_screens.dart';
+import 'features/checkout/presentation/screens/payment_step2_screen.dart';
+import 'features/home/presentation/screens/home_screen.dart';
+import 'features/orders/data/models/order_model.dart';
+import 'features/orders/presentation/screens/order_details_screen.dart';
+import 'features/orders/presentation/screens/orders_screen.dart';
+import 'features/profile/data/models/profile_model.dart';
+import 'features/profile/presentation/cubit/profile_cubit.dart';
+import 'features/profile/presentation/screens/edit_profile_screen.dart';
+import 'features/profile/presentation/screens/profile_screen.dart';
+import 'features/splash/presentation/views/splash_view.dart';
+import 'features/store/presentation/screens/product_details_screen.dart';
+import 'features/store/presentation/screens/search_screen.dart';
+import 'features/store/presentation/screens/store_screen.dart';
+import 'features/vaccinations/presentation/cubit/vaccinations_cubit.dart';
+import 'features/vaccinations/presentation/views/vaccinations_view.dart';
+import 'firebase_options.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  await setupDependencies();
+  await configureDependencies();
+
+  final notificationService = sl<NotificationService>();
+  await notificationService.initialize();
+
+  runApp(const VetCareApp());
+}
+
+class VetCareApp extends StatelessWidget {
+  const VetCareApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<AuthCubit>(
+          create: (_) => getIt<AuthCubit>()..checkCurrentUser(),
+        ),
+      ],
+      child: ScreenUtilInit(
+        designSize: const Size(390, 844),
+        minTextAdapt: true,
+        splitScreenMode: true,
+        builder: (context, child) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            title: 'Vet Care',
+            theme: AppTheme.lightTheme,
+            builder: (context, widget) {
+              return MediaQuery(
+                data: MediaQuery.of(
+                  context,
+                ).copyWith(textScaler: TextScaler.noScaling),
+                child: widget ?? const SizedBox.shrink(),
+              );
+            },
+            home: const SplashScreen(),
+            routes: {
+              '/home': (context) => HomeScreen(
+                scrollToPetsOnOpen:
+                    ModalRoute.of(context)?.settings.arguments == 'pets',
+              ),
+              RouteNames.store: (context) => StoreScreen(
+                initialCategoryId:
+                    ModalRoute.of(context)?.settings.arguments as String?,
+              ),
+              RouteNames.search: (_) => const SearchScreen(),
+              RouteNames.productDetails: (context) => ProductDetailsScreen(
+                productId:
+                    (ModalRoute.of(context)?.settings.arguments as String?) ??
+                    '',
+              ),
+              RouteNames.cart: (_) => const CartScreen(),
+              RouteNames.profile: (_) => const ProfileScreen(),
+              RouteNames.editProfile: (context) {
+                final profile = ModalRoute.of(context)?.settings.arguments;
+
+                if (profile is! ProfileModel) {
+                  return const ProfileScreen();
+                }
+
+                return BlocProvider(
+                  create: (_) => sl<ProfileCubit>(),
+                  child: EditProfileScreen(profile: profile),
+                );
+              },
+              RouteNames.checkout: (_) => const CheckoutStep1Screen(),
+              RouteNames.payment: (context) => PaymentStep2Screen(
+                draft:
+                    ModalRoute.of(context)!.settings.arguments!
+                        as CheckoutDraft,
+              ),
+              RouteNames.paymentSuccess: (context) => PaymentSuccessScreen(
+                order:
+                    ModalRoute.of(context)!.settings.arguments! as OrderModel,
+              ),
+              RouteNames.paymentFailed: (context) => PaymentFailedScreen(
+                message: ModalRoute.of(context)?.settings.arguments as String?,
+              ),
+              RouteNames.orders: (_) => const OrdersScreen(),
+              RouteNames.orderDetails: (context) => OrderDetailsScreen(
+                order:
+                    ModalRoute.of(context)!.settings.arguments! as OrderModel,
+              ),
+              RouteNames.notifications: (_) => const NotificationsScreen(),
+              RouteNames.vaccinations: (context) => BlocProvider(
+                create: (_) => sl<VaccinationsCubit>(),
+                child: VaccinationsView(
+                  petId: ModalRoute.of(context)!.settings.arguments! as String,
+                ),
+              ),
+              RouteNames.admin: (_) => const AdminDashboardScreen(),
+              '/admin/products': (_) => const AdminProductsScreen(),
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
+
+========== lib\core\services\notifications\fcm_service.dart ==========
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
+
+import '../firebase/firebase_auth_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../firebase/firestore_service.dart';
+import 'notification_service.dart';
+
+class FcmService implements NotificationService {
+  final FirebaseMessaging _messaging;
+  final FirebaseAuthService _authService;
+  final FirestoreService _firestoreService;
+
+  StreamSubscription<String>? _tokenSubscription;
+  StreamSubscription<dynamic>? _authSubscription;
+  StreamSubscription<RemoteMessage>? _messageSubscription;
+  StreamSubscription<RemoteMessage>? _openedSubscription;
+
+  String? _savedDevicePath;
+  bool _initialized = false;
+
+  FcmService(this._messaging, this._authService, this._firestoreService);
+
+  @override
+  Future<void> initialize() async {
+    if (_initialized) return;
+    _initialized = true;
+
+    await requestPermission();
+    await _messaging.setAutoInitEnabled(true);
+
+    _messageSubscription = FirebaseMessaging.onMessage.listen(
+      _handleForegroundMessage,
+    );
+
+    _openedSubscription = FirebaseMessaging.onMessageOpenedApp.listen(
+      _handleNotificationTap,
+    );
+
+    _tokenSubscription = onTokenRefresh.listen((_) {
+      unawaited(_saveDeviceTokenSafely());
+    });
+
+    _authSubscription = _authService.authStateChanges.listen((user) {
+      if (user == null) {
+        unawaited(_deactivateSavedDevice());
+      } else {
+        unawaited(_saveDeviceTokenSafely());
+      }
+    });
+
+    await _saveDeviceTokenSafely();
+  }
+
+  @override
+  Future<void> requestPermission() async {
+    await _messaging.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+      provisional: false,
+    );
+  }
+
+  @override
+  Future<String?> getToken() {
+    return _messaging.getToken();
+  }
+
+  @override
+  Future<void> saveDeviceToken() async {
+    final userId = _authService.currentUserId;
+
+    if (userId == null) return;
+
+    final token = await getToken();
+
+    if (token == null || token.isEmpty) return;
+
+    final deviceId = base64Url.encode(utf8.encode(token)).replaceAll('=', '');
+
+    final devicePath = 'users/$userId/devices/$deviceId';
+
+    if (_savedDevicePath != null && _savedDevicePath != devicePath) {
+      await _deactivateSavedDevice();
+    }
+
+    final document = await _firestoreService.getDocument(devicePath);
+
+    final data = <String, dynamic>{
+      'token': token,
+      'deviceId': deviceId,
+      'platform': _platformName,
+      'isActive': true,
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
+
+    if (!document.exists) {
+      data['createdAt'] = FieldValue.serverTimestamp();
+    }
+
+    await _firestoreService.setDocument(
+      path: devicePath,
+      data: data,
+      merge: true,
+    );
+
+    _savedDevicePath = devicePath;
+    debugPrint('FCM device token saved successfully.');
+  }
+
+  @override
+  Stream<String> get onTokenRefresh {
+    return _messaging.onTokenRefresh;
+  }
+
+  String get _platformName {
+    if (kIsWeb) return 'web';
+
+    return switch (defaultTargetPlatform) {
+      TargetPlatform.android => 'android',
+      TargetPlatform.iOS => 'ios',
+      TargetPlatform.macOS => 'macos',
+      TargetPlatform.windows => 'windows',
+      TargetPlatform.linux => 'linux',
+      TargetPlatform.fuchsia => 'fuchsia',
+    };
+  }
+
+  Future<void> _saveDeviceTokenSafely() async {
+    try {
+      await saveDeviceToken();
+    } catch (error, stackTrace) {
+      debugPrint('FCM token save failed: $error');
+      debugPrintStack(stackTrace: stackTrace);
+    }
+  }
+
+  Future<void> _deactivateSavedDevice() async {
+    final path = _savedDevicePath;
+
+    if (path == null) return;
+
+    try {
+      await _firestoreService.updateDocument(
+        path: path,
+        data: {'isActive': false, 'updatedAt': FieldValue.serverTimestamp()},
+      );
+    } catch (error) {
+      debugPrint('FCM device deactivation failed: $error');
+    } finally {
+      _savedDevicePath = null;
+    }
+  }
+
+  void _handleForegroundMessage(RemoteMessage message) {
+    debugPrint('FCM message received while app is open.');
+    debugPrint('Title: ${message.notification?.title}');
+    debugPrint('Body: ${message.notification?.body}');
+  }
+
+  void _handleNotificationTap(RemoteMessage message) {
+    debugPrint('FCM notification opened.');
+    debugPrint('Title: ${message.notification?.title}');
+    debugPrint('Body: ${message.notification?.body}');
+  }
+
+  Future<void> dispose() async {
+    await _tokenSubscription?.cancel();
+    await _authSubscription?.cancel();
+    await _messageSubscription?.cancel();
+    await _openedSubscription?.cancel();
+  }
+}
+
+
+========== lib\features\vaccinations\presentation\views\vaccinations_view.dart ==========
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
+
+import '../../data/models/vaccination_model.dart';
+import '../cubit/vaccinations_cubit.dart';
+import '../cubit/vaccinations_state.dart';
+
+class VaccinationsView extends StatefulWidget {
+  final String petId;
+
+  const VaccinationsView({
+    super.key,
+    required this.petId,
+  });
+
+  @override
+  State<VaccinationsView> createState() => _VaccinationsViewState();
+}
+
+class _VaccinationsViewState extends State<VaccinationsView> {
+  @override
+  void initState() {
+    super.initState();
+
+    // أول ما الشاشة تفتح، نجيب تطعيمات الحيوان
+    context.read<VaccinationsCubit>().getVaccinations(widget.petId);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF7F9F9),
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF173F3F),
+        centerTitle: true,
+        title: const Text(
+          'تطعيمات الحيوان',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+      body: BlocBuilder<VaccinationsCubit, VaccinationsState>(
+        builder: (context, state) {
+          // حالة التحميل
+          if (state is VaccinationsLoading) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+
+          // حالة الخطأ
+          if (state is VaccinationsError) {
+            return _buildErrorState(
+              context,
+              state.message,
+            );
+          }
+
+          // حالة النجاح
+          if (state is VaccinationsLoaded) {
+            return _buildVaccinationsList(
+              context,
+              state.vaccinations,
+            );
+          }
+
+          // الحالة الابتدائية
+          return const SizedBox.shrink();
+        },
+      ),
+    );
+  }
+
+  // ===========================================================
+  // قائمة التطعيمات
+  // ===========================================================
+
+  Widget _buildVaccinationsList(
+      BuildContext context,
+      List<VaccinationModel> vaccinations,
+      ) {
+    if (vaccinations.isEmpty) {
+      return _buildEmptyState();
+    }
+
+    return RefreshIndicator(
+      onRefresh: () {
+        return context
+            .read<VaccinationsCubit>()
+            .getVaccinations(widget.petId);
+      },
+      child: ListView.separated(
+        padding: const EdgeInsets.all(20),
+        itemCount: vaccinations.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 14),
+        itemBuilder: (context, index) {
+          final vaccination = vaccinations[index];
+
+          return _buildVaccinationCard(
+            vaccination,
+          );
+        },
+      ),
+    );
+  }
+
+  // ===========================================================
+  // Card التطعيم
+  // ===========================================================
+
+  Widget _buildVaccinationCard(
+      VaccinationModel vaccination,
+      ) {
+    final bool isToday = _isToday(vaccination.dueDate);
+
+    final bool isOverdue = vaccination.dueDate.isBefore(
+      DateTime.now(),
+    );
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: const Color(0xFFE5ECEC),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // أيقونة التطعيم
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: const Color(0xFFE6F4F2),
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: const Icon(
+              Icons.vaccines_outlined,
+              color: Color(0xFF178B82),
+              size: 28,
+            ),
+          ),
+
+          const SizedBox(width: 14),
+
+          // بيانات التطعيم
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  vaccination.vaccineName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF173F3F),
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.calendar_today_outlined,
+                      size: 15,
+                      color: Color(0xFF718181),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      DateFormat('dd/MM/yyyy').format(
+                        vaccination.dueDate,
+                      ),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF718181),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(width: 10),
+
+          // حالة التطعيم
+          _buildStatusBadge(
+            isToday: isToday,
+            isOverdue: isOverdue,
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ===========================================================
+  // Badge الحالة
+  // ===========================================================
+
+  Widget _buildStatusBadge({
+    required bool isToday,
+    required bool isOverdue,
+  }) {
+    String text;
+    Color backgroundColor;
+    Color textColor;
+
+    if (isToday) {
+      text = 'اليوم';
+      backgroundColor = const Color(0xFFFFF4D8);
+      textColor = const Color(0xFF9A7410);
+    } else if (isOverdue) {
+      text = 'متأخر';
+      backgroundColor = const Color(0xFFFFE7E7);
+      textColor = const Color(0xFFC84A4A);
+    } else {
+      text = 'قادم';
+      backgroundColor = const Color(0xFFE6F4F2);
+      textColor = const Color(0xFF178B82);
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 6,
+      ),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: textColor,
+        ),
+      ),
+    );
+  }
+
+  // ===========================================================
+  // Empty State
+  // ===========================================================
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(30),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 90,
+              height: 90,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE6F4F2),
+                borderRadius: BorderRadius.circular(28),
+              ),
+              child: const Icon(
+                Icons.vaccines_outlined,
+                size: 45,
+                color: Color(0xFF178B82),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            const Text(
+              'لا توجد تطعيمات حالياً',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF173F3F),
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            const Text(
+              'ستظهر مواعيد التطعيمات الخاصة بالحيوان هنا.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: Color(0xFF718181),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ===========================================================
+  // Error State
+  // ===========================================================
+
+  Widget _buildErrorState(
+      BuildContext context,
+      String message,
+      ) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(30),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.error_outline,
+              size: 55,
+              color: Color(0xFFC84A4A),
+            ),
+
+            const SizedBox(height: 16),
+
+            const Text(
+              'حدث خطأ',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF173F3F),
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 13,
+                color: Color(0xFF718181),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            ElevatedButton(
+              onPressed: () {
+                context
+                    .read<VaccinationsCubit>()
+                    .getVaccinations(widget.petId);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF178B82),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'إعادة المحاولة',
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ===========================================================
+  // هل الموعد هو اليوم؟
+  // ===========================================================
+
+  bool _isToday(DateTime date) {
+    final now = DateTime.now();
+
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
+  }
+}
+
+========== lib\features\vaccinations\data\models\vaccination_model.dart ==========
+class VaccinationModel {
+  // ID الخاص بسجل التطعيم
+  final String id;
+
+  // ID الخاص بالحيوان صاحب التطعيم
+  final String petId;
+
+  // اسم التطعيم
+  final String vaccineName;
+
+  // موعد التطعيم المستحق
+  final DateTime dueDate;
+
+  VaccinationModel({
+    required this.id,
+    required this.petId,
+    required this.vaccineName,
+    required this.dueDate,
+  });
+}
+
+========== lib\features\orders\presentation\screens\order_details_screen.dart ==========
+import 'dart:ui' as ui;
+
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
+
+import '../../../../core/di/injection_container.dart';
+import '../../../../core/routing/route_names.dart';
+import '../../data/models/order_model.dart';
+import '../cubit/orders_cubit.dart';
+
+String _money(num amount) => NumberFormat.currency(
+      locale: 'ar_EG',
+      symbol: 'ج.م',
+      decimalDigits: 0,
+    ).format(amount);
+
+class OrderDetailsScreen extends StatelessWidget {
+  final OrderModel order;
+
+  const OrderDetailsScreen({super.key, required this.order});
+
+  @override
+  Widget build(BuildContext context) => Directionality(
+        textDirection: ui.TextDirection.rtl,
+        child: BlocProvider(
+          create: (_) => sl<OrdersCubit>(),
+          child: _OrderDetailsView(order: order),
+        ),
+      );
+}
+
+class _OrderDetailsView extends StatelessWidget {
+  final OrderModel order;
+
+  const _OrderDetailsView({required this.order});
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        backgroundColor: const Color(0xFFF8F9FA),
+        appBar: AppBar(title: const Text('تفاصيل الطلب'), centerTitle: true),
+        body: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            _section(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(order.orderNumber, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 6),
+                Text(order.createdAt == null ? 'تاريخ الطلب غير متاح' : 'تاريخ الطلب: ${order.createdAt!.day}/${order.createdAt!.month}/${order.createdAt!.year}'),
+                const SizedBox(height: 10),
+                Text('الحالة: ${order.statusLabel}', style: const TextStyle(color: Color(0xFF1E6554), fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4),
+                Text(_paymentLabel(order.paymentStatus)),
+              ]),
+            ),
+            const SizedBox(height: 12),
+            _section(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('المنتجات', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 10),
+                ...order.items.map((item) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 7),
+                      child: Row(children: [
+                        Expanded(child: Text('${item.name} × ${item.quantity}')),
+                        Text(_money(item.totalPrice)),
+                      ]),
+                    )),
+              ]),
+            ),
+            const SizedBox(height: 12),
+            _section(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('عنوان التوصيل', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Text(order.customerName),
+                Text(order.phoneNumber),
+                Text('${order.city}، ${order.address}'),
+                if (order.deliveryNotes.isNotEmpty) Text('ملاحظات: ${order.deliveryNotes}'),
+              ]),
+            ),
+            const SizedBox(height: 12),
+            _section(
+              child: Column(children: [
+                _row('المجموع الفرعي', _money(order.subtotal)),
+                const SizedBox(height: 8),
+                _row('التوصيل', _money(order.deliveryFee)),
+                const Divider(height: 24),
+                _row('الإجمالي', _money(order.total), bold: true),
+              ]),
+            ),
+            if (order.isCompleted || order.isCancelled) ...[
+              const SizedBox(height: 16),
+              SizedBox(
+                height: 50,
+                child: OutlinedButton.icon(
+                  onPressed: () async {
+                    try {
+                      await context.read<OrdersCubit>().reorder(order);
+                      if (!context.mounted) return;
+                      Navigator.pushNamed(context, RouteNames.cart);
+                    } catch (_) {
+                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذر إضافة المنتجات للسلة. حاول مرة أخرى.')));
+                    }
+                  },
+                  icon: const Icon(Icons.replay),
+                  label: const Text('اطلب المنتجات مرة أخرى'),
+                ),
+              ),
+            ],
+          ],
+        ),
+      );
+
+  Widget _section({required Widget child}) => Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+        child: child,
+      );
+
+  Widget _row(String label, String value, {bool bold = false}) => Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [Text(label, style: TextStyle(fontWeight: bold ? FontWeight.bold : FontWeight.normal)), Text(value, style: TextStyle(fontWeight: bold ? FontWeight.bold : FontWeight.normal))],
+      );
+
+  String _paymentLabel(String status) => switch (status) {
+        'paid_simulated' => 'الدفع الإلكتروني: نجاح تجريبي بدون خصم',
+        'pending_on_delivery' => 'الدفع: عند الاستلام',
+        _ => 'حالة الدفع: $status',
+      };
+}
+

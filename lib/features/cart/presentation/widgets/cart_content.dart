@@ -20,7 +20,7 @@ class CartContent extends StatelessWidget {
         Expanded(child: CartItemsList(state: state)),
         CartSummary(
           subtotal: state.subtotal,
-          deliveryFee: CartState.deliveryFee,
+          deliveryFee: CartState.standardDeliveryFee,
           total: state.total,
           isBusy: state.isClearing,
           onCheckout: onCheckout,

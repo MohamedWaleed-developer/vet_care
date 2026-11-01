@@ -1,0 +1,208 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && request.auth.token.admin == true;
+    }
+
+    function isOwner(userId) {
+      return signedIn()
+        && request.auth.uid == userId;
+    }
+
+    function ownsPet(petId) {
+      return signedIn()
+        && petId is string
+        && exists(
+          /databases/$(database)/documents/pets/$(petId)
+        )
+        && get(
+          /databases/$(database)/documents/pets/$(petId)
+        ).data.ownerId == request.auth.uid;
+    }
+
+    // User profiles
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+
+      allow create: if isOwner(userId)
+        && request.resource.data.uid == userId
+        && request.resource.data.keys().hasOnly([
+          'uid',
+          'name',
+          'phoneNumber',
+          'photoBase64',
+          'updatedAt'
+        ]);
+
+      allow update: if isOwner(userId)
+        && request.resource.data.uid == userId
+        && request.resource.data.diff(resource.data)
+          .affectedKeys()
+          .hasOnly([
+            'uid',
+            'name',
+            'phoneNumber',
+            'photoBase64',
+            'updatedAt'
+          ]);
+
+      allow delete: if isAdmin();
+
+      // Registered devices and FCM tokens
+      match /devices/{deviceId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    // Pets
+    match /pets/{petId} {
+      allow read: if signedIn()
+        && (
+          resource.data.ownerId == request.auth.uid
+          || isAdmin()
+        );
+
+      allow create: if signedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.keys().hasOnly([
+          'ownerId',
+          'name',
+          'gender',
+          'category',
+          'ageYears',
+          'ageMonths',
+          'ageDays',
+          'breed',
+          'weightKg',
+          'weightGrams',
+          'lastRabiesDate',
+          'lastCoreDate',
+          'lastSmallpoxDate',
+          'lastFmdDate',
+          'lastMycoDate'
+        ]);
+
+      allow update: if signedIn()
+        && resource.data.ownerId == request.auth.uid
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.diff(resource.data)
+          .affectedKeys()
+          .hasOnly([
+            'name',
+            'gender',
+            'category',
+            'ageYears',
+            'ageMonths',
+            'ageDays',
+            'breed',
+            'weightKg',
+            'weightGrams',
+            'lastRabiesDate',
+            'lastCoreDate',
+            'lastSmallpoxDate',
+            'lastFmdDate',
+            'lastMycoDate'
+          ]);
+
+      allow delete: if signedIn()
+        && resource.data.ownerId == request.auth.uid;
+    }
+
+    // Vaccinations
+    match /vaccinations/{vaccinationId} {
+      allow read: if ownsPet(resource.data.petId) || isAdmin();
+
+      allow create: if ownsPet(request.resource.data.petId)
+        && request.resource.data.keys().hasOnly([
+          'petId',
+          'vaccineName',
+          'dueDate'
+        ]);
+
+      allow update: if ownsPet(resource.data.petId)
+        && ownsPet(request.resource.data.petId)
+        && request.resource.data.keys().hasOnly([
+          'petId',
+          'vaccineName',
+          'dueDate'
+        ]);
+
+      allow delete: if ownsPet(resource.data.petId) || isAdmin();
+    }
+
+    // Public catalog
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Private cart
+    match /carts/{userId}/items/{itemId} {
+      allow read, delete: if isOwner(userId);
+
+      allow create, update: if isOwner(userId)
+        && request.resource.data.keys().hasOnly([
+          'productId',
+          'variant',
+          'name',
+          'unitPrice',
+          'imageUrl',
+          'quantity',
+          'updatedAt'
+        ])
+        && request.resource.data.productId is string
+        && request.resource.data.quantity is int
+        && request.resource.data.quantity >= 1
+        && request.resource.data.quantity <= 100;
+    }
+
+    // Orders
+    match /orders/{orderId} {
+      allow read: if isAdmin()
+        || (
+          signedIn()
+          && resource.data.userId == request.auth.uid
+        );
+
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Notifications
+    match /notifications/{notificationId} {
+      // Users can read only their own notifications.
+      allow get, list: if signedIn()
+        && resource.data.userId == request.auth.uid;
+
+      // Only trusted backend processes can create notifications.
+      allow create, delete: if false;
+
+      // Users can update only the isRead field of their own notifications.
+      allow update: if signedIn()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.diff(resource.data)
+          .affectedKeys()
+          .hasOnly(['isRead'])
+        && request.resource.data.isRead is bool;
+    }
+
+    // Deny all other unmatched paths.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

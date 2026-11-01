@@ -1,3 +1,4 @@
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class FirestoreService {
@@ -39,6 +40,23 @@ class FirestoreService {
     required Map<String, dynamic> data,
   }) {
     return _firestore.doc(path).update(data);
+  }
+
+  Future<void> updateDocuments({
+    required Map<String, Map<String, dynamic>> updates,
+  }) async {
+    if (updates.isEmpty) return;
+
+    final batch = _firestore.batch();
+
+    for (final entry in updates.entries) {
+      batch.update(
+        _firestore.doc(entry.key),
+        entry.value,
+      );
+    }
+
+    await batch.commit();
   }
 
   Future<void> deleteDocument(String path) {

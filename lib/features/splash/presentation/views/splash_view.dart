@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../admin/presentation/screens/admin_dashboard_screen.dart';
 import '../../../home/presentation/screens/home_screen.dart';
 import '../../../onboarding/presentation/screens/onboarding_screen.dart';
 
@@ -12,15 +13,10 @@ class SplashScreen extends StatelessWidget {
   static const Color _bg = Color(0xFFE7E6DF);
   static const Color _green = Color(0xFF1F7060);
 
-  /// صورة الـ Splash
-  static const String _imagePath =
-      'assets/images/splash_image.png';
-
-  /// حجم الصورة
+  static const String _imagePath = 'assets/images/splash_image.png';
   static const double _logoWidthFactor = 0.9;
   static const double _logoMaxWidth = 420;
 
-  /// بيقرر الوجهة حسب حالة المستخدم
   Future<void> _navigate(BuildContext context) async {
     final prefs = await SharedPreferences.getInstance();
     final seenOnboarding = prefs.getBool('seenOnboarding') ?? false;
@@ -29,224 +25,103 @@ class SplashScreen extends StatelessWidget {
     if (!context.mounted) return;
 
     Widget next;
+
     if (user != null) {
-      // مسجل دخول -> الهوم مباشرة
-      next = const HomeScreen();
+      try {
+        final tokenResult = await user.getIdTokenResult(true);
+        final isAdmin = tokenResult.claims?['admin'] == true;
+
+        if (!context.mounted) return;
+
+        next = isAdmin ? const AdminDashboardScreen() : const HomeScreen();
+      } catch (_) {
+        if (!context.mounted) return;
+
+        next = const HomeScreen();
+      }
     } else if (!seenOnboarding) {
-      // مستخدم جديد -> أونبوردينج
       next = const OnboardingScreen();
     } else {
-      // شاف الأونبوردينج ومش مسجل -> لوجين
       next = const OnboardingScreen();
     }
 
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => next),
-    );
+    if (!context.mounted) return;
+
+    Navigator.of(
+      context,
+    ).pushReplacement(MaterialPageRoute(builder: (_) => next));
   }
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final w = size.width;
-    final h = size.height;
+    return Scaffold(
+      backgroundColor: _bg,
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final logoWidth = (constraints.maxWidth * _logoWidthFactor).clamp(
+              0.0,
+              _logoMaxWidth,
+            );
 
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: _bg,
-        body: Stack(
-          children: [
-            // =========================
-            // الدوائر الزخرفية في الخلفية
-            // =========================
-
-            _bgCircle(
-              left: -w * 0.30,
-              top: -h * 0.02,
-              size: w * 0.78,
-              color: const Color(0xFFE2E2DA),
-            ),
-
-            _bgCircle(
-              right: -w * 0.50,
-              top: h * 0.30,
-              size: w * 0.75,
-              color: const Color(0xFFE1E4DB),
-            ),
-
-            _bgCircle(
-              left: -w * 0.30,
-              bottom: -h * 0.06,
-              size: w * 0.62,
-              color: const Color(0xFFC7CEBF),
-            ),
-
-            _bgCircle(
-              right: -w * 0.32,
-              bottom: -h * 0.08,
-              size: w * 0.55,
-              color: const Color(0xFFE0E3DA),
-            ),
-
-            // =========================
-            // محتوى الشاشة
-            // =========================
-
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 22,
+            return Column(
+              children: [
+                const Spacer(),
+                Center(
+                  child: Image.asset(
+                    _imagePath,
+                    width: logoWidth,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) {
+                      return Icon(Icons.pets_rounded, size: 100, color: _green);
+                    },
+                  ),
                 ),
-                child: Column(
-                  children: [
-                    const Spacer(flex: 9),
-
-                    // =========================
-                    // صورة الـ Splash
-                    // =========================
-
-                    Image.asset(
-                      _imagePath,
-                      width: (w * _logoWidthFactor)
-                          .clamp(0.0, _logoMaxWidth),
-                      fit: BoxFit.contain,
-                    ),
-
-                    const Spacer(flex: 8),
-
-                    // =========================
-                    // اسم التطبيق
-                    // =========================
-
-                    Text(
-                      'سكة العلاج البيطرية',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.cairo(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w800,
-                        color: _green,
-                        height: 1.3,
-                      ),
-                    ),
-
-                    const SizedBox(height: 14),
-
-                    // =========================
-                    // وصف التطبيق
-                    // =========================
-
-                    Text(
-                      'كل ما تحتاجه لرعاية حيوانك..\n'
-                          'في مكان واحد',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.cairo(
-                        fontSize: 19,
-                        fontWeight: FontWeight.w600,
-                        color: _green,
-                        height: 1.5,
-                      ),
-                    ),
-
-                    const Spacer(flex: 9),
-
-                    // =========================
-                    // زر ابدأ
-                    // =========================
-
-                    _StartButton(
+                const SizedBox(height: 24),
+                Text(
+                  'Vet Care',
+                  style: GoogleFonts.cairo(
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold,
+                    color: _green,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'رعاية أفضل لحيواناتك',
+                  style: GoogleFonts.cairo(fontSize: 16, color: _green),
+                ),
+                const Spacer(),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 28,
+                    vertical: 24,
+                  ),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
                       onPressed: () => _navigate(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _green,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: Text(
+                        'ابدأ',
+                        style: GoogleFonts.cairo(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
-
-                    const SizedBox(height: 34),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // =========================
-  // الدوائر الخلفية
-  // =========================
-
-  Widget _bgCircle({
-    double? left,
-    double? right,
-    double? top,
-    double? bottom,
-    required double size,
-    required Color color,
-  }) {
-    return Positioned(
-      left: left,
-      right: right,
-      top: top,
-      bottom: bottom,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
-        ),
-      ),
-    );
-  }
-}
-
-// =======================
-// زرار ابدأ
-// =======================
-
-class _StartButton extends StatelessWidget {
-  final VoidCallback onPressed;
-
-  const _StartButton({
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: 57,
-      child: Material(
-        color: const Color(0xFF1F7060),
-        shape: StadiumBorder(
-          side: BorderSide(
-            color: Colors.green.shade600,
-            width: 1,
-          ),
-        ),
-        child: InkWell(
-          customBorder: const StadiumBorder(),
-          onTap: onPressed,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Text(
-                'ابدأ',
-                style: GoogleFonts.cairo(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
-
-              const Positioned(
-                right: 26,
-                child: Icon(
-                  Icons.keyboard_double_arrow_right_rounded,
-                  color: Colors.white,
-                  size: 28,
-                ),
-              ),
-            ],
-          ),
+              ],
+            );
+          },
         ),
       ),
     );

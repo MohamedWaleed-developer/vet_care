@@ -56,7 +56,7 @@ class _CartView extends StatelessWidget {
 
             return CartContent(
               state: state,
-              onCheckout: () => _showCheckoutMessage(context),
+              onCheckout: () => _openCheckout(context),
             );
           },
         ),
@@ -97,11 +97,8 @@ class _CartView extends StatelessWidget {
     }
   }
 
-  void _showCheckoutMessage(BuildContext context) {
-    _showMessage(
-      context,
-      'إتمام الطلب سيكون متاحًا بعد تجهيز شاشة الشحن والدفع.',
-    );
+  void _openCheckout(BuildContext context) {
+    Navigator.pushNamed(context, RouteNames.checkout);
   }
 
   void _showMessage(BuildContext context, String? message) {

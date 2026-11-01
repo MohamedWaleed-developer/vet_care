@@ -9,9 +9,17 @@ import '../cubit/vaccinations_state.dart';
 class VaccinationsView extends StatefulWidget {
   final String petId;
 
+  /// نوع الحيوان: 'cat' أو 'dog' (الافتراضي قطة)
+  final String petType;
+
+  /// تاريخ ميلاد الحيوان (اختياري)
+  final DateTime? birthDate;
+
   const VaccinationsView({
     super.key,
     required this.petId,
+    this.petType = 'cat',
+    this.birthDate,
   });
 
   @override
@@ -84,6 +92,7 @@ class _VaccinationsViewState extends State<VaccinationsView> {
       BuildContext context,
       List<VaccinationModel> vaccinations,
       ) {
+    // لو مفيش تطعيمات مسجلة، نعرض رسالة فارغة بسيطة بدل الجدول الاسترشادي
     if (vaccinations.isEmpty) {
       return _buildEmptyState();
     }
@@ -257,7 +266,7 @@ class _VaccinationsViewState extends State<VaccinationsView> {
   }
 
   // ===========================================================
-  // Empty State
+  // Empty State (عند عدم وجود تطعيمات مسجلة)
   // ===========================================================
 
   Widget _buildEmptyState() {
@@ -266,39 +275,27 @@ class _VaccinationsViewState extends State<VaccinationsView> {
         padding: const EdgeInsets.all(30),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 90,
-              height: 90,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE6F4F2),
-                borderRadius: BorderRadius.circular(28),
-              ),
-              child: const Icon(
-                Icons.vaccines_outlined,
-                size: 45,
-                color: Color(0xFF178B82),
-              ),
+          children: const [
+            Icon(
+              Icons.vaccines_outlined,
+              size: 64,
+              color: Color(0xFF178B82),
             ),
-
-            const SizedBox(height: 20),
-
-            const Text(
-              'لا توجد تطعيمات حالياً',
+            SizedBox(height: 16),
+            Text(
+              'لا توجد تطعيمات مسجلة',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF173F3F),
               ),
             ),
-
-            const SizedBox(height: 8),
-
-            const Text(
-              'ستظهر مواعيد التطعيمات الخاصة بالحيوان هنا.',
+            SizedBox(height: 8),
+            Text(
+              'لم يتم إضافة أي تطعيمات لهذا الحيوان بعد.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 13,
                 color: Color(0xFF718181),
               ),
             ),

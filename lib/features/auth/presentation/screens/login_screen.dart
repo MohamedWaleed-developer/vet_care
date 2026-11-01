@@ -1,14 +1,10 @@
-import 'dart:ui';
-
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../pets/data/models/animal_model.dart';
+import '../../../admin/presentation/screens/admin_dashboard_screen.dart';
 import '../../../pets/presentation/screens/add_pet_prompt_screen.dart';
-import '../../../pets/presentation/screens/add_pet_screen.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
 import '../widgets/auth_text_field.dart';
@@ -37,23 +33,18 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _login() {
     final email = _emailController.text.trim();
-    final password = _passwordController.text.trim();
+    final password = _passwordController.text;
 
     if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'من فضلك ادخل البريد الإلكتروني وكلمة المرور',
-          ),
+          content: Text('من فضلك ادخل البريد الإلكتروني وكلمة المرور'),
         ),
       );
       return;
     }
 
-    context.read<AuthCubit>().login(
-      email,
-      password,
-    );
+    context.read<AuthCubit>().login(email, password);
   }
 
   @override
@@ -62,25 +53,21 @@ class _LoginScreenState extends State<LoginScreen> {
       textDirection: TextDirection.rtl,
       child: BlocListener<AuthCubit, AuthState>(
         listener: (context, state) {
-          // عند نجاح تسجيل الدخول
-          // ننتقل مؤقتًا إلى شاشة إضافة الحيوان
           if (state is AuthSuccess) {
-            Navigator.pushReplacement(
-              context,
+            Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(
-                builder: (_) => const AddPetPromptScreen(),
-
+                builder: (_) => state.isAdmin
+                    ? const AdminDashboardScreen()
+                    : const AddPetPromptScreen(),
               ),
+              (route) => false,
             );
           }
 
-          // في حالة حدوث خطأ أثناء تسجيل الدخول
           if (state is AuthError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-              ),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.message)));
           }
         },
         child: Scaffold(
@@ -96,17 +83,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const SizedBox(height: 20),
-
-                    // عنوان الشاشة
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text(
-                          '🐾',
-                          style: TextStyle(
-                            fontSize: 26,
-                          ),
-                        ),
+                        const Text('🐾', style: TextStyle(fontSize: 26)),
                         const SizedBox(width: 8),
                         Text(
                           'مرحبا بعودتك',
@@ -116,9 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 6),
-
                     Center(
                       child: Text(
                         'سجل دخولك للمتابعة',
@@ -128,38 +106,28 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 42),
-
-                    // البريد الإلكتروني
                     Text(
                       'البريد الإلكتروني',
                       style: AppTextStyles.bodyLarge.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-
                     const SizedBox(height: 10),
-
                     AuthTextField(
                       controller: _emailController,
                       hintText: 'ادخل بريدك الإلكتروني',
                       icon: Icons.mail_outline_rounded,
                       keyboardType: TextInputType.emailAddress,
                     ),
-
                     const SizedBox(height: 22),
-
-                    // كلمة المرور
                     Text(
                       'كلمة المرور',
                       style: AppTextStyles.bodyLarge.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-
                     const SizedBox(height: 10),
-
                     AuthTextField(
                       controller: _passwordController,
                       hintText: 'ادخل كلمة المرور الخاصة بك',
@@ -173,10 +141,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         });
                       },
                     ),
-
                     const SizedBox(height: 12),
-
-                    // نسيت كلمة المرور
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
@@ -202,10 +167,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 36),
-
-                    // زر تسجيل الدخول
                     BlocBuilder<AuthCubit, AuthState>(
                       builder: (context, state) {
                         final isLoading = state is AuthLoading;
@@ -216,24 +178,19 @@ class _LoginScreenState extends State<LoginScreen> {
                             onPressed: isLoading ? null : _login,
                             child: isLoading
                                 ? const SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                                : const Text(
-                              'سجل دخول',
-                            ),
+                                    width: 22,
+                                    height: 22,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Text('سجل دخول'),
                           ),
                         );
                       },
                     ),
-
                     const SizedBox(height: 60),
-
-                    // إنشاء حساب جديد
                     Center(
                       child: GestureDetector(
                         onTap: () {
@@ -261,7 +218,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 16),
                   ],
                 ),

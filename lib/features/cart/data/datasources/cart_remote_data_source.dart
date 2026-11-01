@@ -25,6 +25,36 @@ class CartRemoteDataSource {
         );
   }
 
+  Future<List<CartItemModel>> getItems() async {
+    final userId = _requireUserId();
+    final snapshot = await _itemsCollection(userId).get();
+    return snapshot.docs
+        .map((doc) => CartItemModel.fromMap(doc.id, doc.data()))
+        .toList();
+  }
+
+  Future<void> addItems(List<CartItemModel> items) async {
+    final userId = _requireUserId();
+    final batch = _firestore.batch();
+    for (final item in items) {
+      final reference = _itemsCollection(userId).doc(item.id);
+      batch.set(
+        reference,
+        {
+          'productId': item.productId,
+          'variant': item.variant,
+          'name': item.name,
+          'unitPrice': item.unitPrice,
+          'imageUrl': item.imageUrl,
+          'quantity': FieldValue.increment(item.quantity),
+          'updatedAt': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
+    }
+    if (items.isNotEmpty) await batch.commit();
+  }
+
   Future<void> updateQuantity(String itemId, int quantity) async {
     final userId = _requireUserId();
     final item = _itemsCollection(userId).doc(itemId);

@@ -62,6 +62,15 @@ class CartAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
       ),
       actions: [
+        IconButton(
+          tooltip: 'طلباتي',
+          icon: Icon(
+            Icons.receipt_long_outlined,
+            color: AppColors.primary,
+            size: 22.sp,
+          ),
+          onPressed: () => Navigator.pushNamed(context, RouteNames.orders),
+        ),
         BlocBuilder<CartCubit, CartState>(
           buildWhen: (previous, current) =>
               previous.items.length != current.items.length ||

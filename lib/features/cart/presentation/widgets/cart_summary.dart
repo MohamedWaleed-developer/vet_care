@@ -65,7 +65,7 @@ class CartSummary extends StatelessWidget {
           SizedBox(height: 12.h),
           _SummaryRow(title: 'المجموع الفرعي', value: formattedSubtotal),
           SizedBox(height: 8.h),
-          _SummaryRow(title: 'التوصيل', value: formattedDeliveryFee),
+          _SummaryRow(title: 'التوصيل العادي', value: formattedDeliveryFee),
           Divider(height: 24.h, color: AppColors.border),
           _SummaryRow(
             title: 'المجموع الإجمالي',
