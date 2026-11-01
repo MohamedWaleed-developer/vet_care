@@ -3,10 +3,7 @@ import 'package:intl/intl.dart';
 class AppFormatters {
   AppFormatters._();
 
-  static String currency(
-      double amount, {
-        String currency = 'SAR',
-      }) {
+  static String currency(double amount, {String currency = 'ج.م'}) {
     final formatter = NumberFormat('#,##0.00');
 
     return '${formatter.format(amount)} $currency';

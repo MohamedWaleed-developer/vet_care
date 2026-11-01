@@ -1,6 +1,8 @@
 import '../../data/models/cart_item_model.dart';
 
 class CartState {
+  static const num deliveryFee = 15;
+
   final List<CartItemModel> items;
   final bool isLoading;
   final String? errorMessage;
@@ -16,6 +18,8 @@ class CartState {
   });
 
   num get subtotal => items.fold<num>(0, (sum, item) => sum + item.totalPrice);
+
+  num get total => subtotal + deliveryFee;
 
   CartState copyWith({
     List<CartItemModel>? items,
