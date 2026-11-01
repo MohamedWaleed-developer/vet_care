@@ -1,27 +1,20 @@
-import 'dart:ui' show PointerDeviceKind;
-
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/routing/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/widgets/app_image.dart';
-import '../../../pets/data/local/pet_image_local_storage.dart';
 import '../../../pets/data/models/animal_model.dart';
-import '../../../pets/data/repositories/pets_repository.dart';
 import '../../../pets/presentation/screens/pet_category_screen.dart';
 import '../../../store/data/models/product_model.dart';
 import '../../../store/presentation/cubit/store_cubit.dart';
-import '../../../store/presentation/cubit/store_state.dart';
 import '../../../vaccinations/data/calculators/vaccination/vaccination_calculator.dart';
 import '../../../vaccinations/presentation/views/pet_details_view.dart';
+import '../cubit/home_cubit.dart';
+import '../cubit/home_state.dart';
 import '../widgets/home_bottom_nav.dart';
 import '../widgets/home_drawer.dart';
-import '../widgets/home_search_bar.dart';
-import '../widgets/my_pets_section.dart';
+import '../widgets/home_page_content.dart';
 
 class HomeScreen extends StatelessWidget {
   final bool scrollToPetsOnOpen;
@@ -29,10 +22,15 @@ class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key, this.scrollToPetsOnOpen = false});
 
   @override
-  Widget build(BuildContext context) => BlocProvider(
-    create: (_) => sl<StoreCubit>()..watchStore(),
-    child: _HomeView(scrollToPetsOnOpen: scrollToPetsOnOpen),
-  );
+  Widget build(BuildContext context) {
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => sl<StoreCubit>()..watchStore()),
+        BlocProvider(create: (_) => sl<HomeCubit>()..loadPets()),
+      ],
+      child: _HomeView(scrollToPetsOnOpen: scrollToPetsOnOpen),
+    );
+  }
 }
 
 class _HomeView extends StatefulWidget {
@@ -46,18 +44,12 @@ class _HomeView extends StatefulWidget {
 
 class _HomeViewState extends State<_HomeView> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
-  final _scrollController = ScrollController();
   final _petsSectionKey = GlobalKey();
-
-  List<AnimalModel> _pets = [];
-  bool _isLoadingPets = true;
-  int _selectedBottomNavIndex = 0;
+  var _selectedBottomNavIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    _loadPets();
-
     if (widget.scrollToPetsOnOpen) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _scrollToPets();
@@ -65,41 +57,13 @@ class _HomeViewState extends State<_HomeView> {
     }
   }
 
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _loadPets() async {
-    final user = FirebaseAuth.instance.currentUser;
-
-    if (user == null) {
-      if (mounted) setState(() => _isLoadingPets = false);
-      return;
-    }
-
-    try {
-      await PetImageLocalStorage.instance.init();
-      final pets = await sl<PetsRepository>().getPets(user.uid);
-
-      if (mounted) {
-        setState(() {
-          _pets = pets;
-          _isLoadingPets = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) setState(() => _isLoadingPets = false);
-    }
-  }
+  Future<void> _loadPets() => context.read<HomeCubit>().loadPets();
 
   Future<void> _openAddPet() async {
     await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const PetCategoryScreen()),
     );
-
     if (mounted) await _loadPets();
   }
 
@@ -116,33 +80,25 @@ class _HomeViewState extends State<_HomeView> {
     }
 
     setState(() => _selectedBottomNavIndex = index);
-
-    switch (index) {
-      case 1:
-        await Navigator.pushNamed(context, RouteNames.store);
-        break;
-      case 3:
-        await Navigator.pushNamed(context, RouteNames.orders);
-        break;
-      case 4:
-        await Navigator.pushNamed(context, RouteNames.profile);
-        break;
-    }
-
-    if (mounted) {
-      setState(() => _selectedBottomNavIndex = 0);
-    }
+    final route = switch (index) {
+      1 => RouteNames.store,
+      3 => RouteNames.orders,
+      4 => RouteNames.profile,
+      _ => null,
+    };
+    if (route != null) await Navigator.pushNamed(context, route);
+    if (mounted) setState(() => _selectedBottomNavIndex = 0);
   }
 
   Future<void> _openVaccinations([AnimalModel? pet]) async {
-    final selectedPet = pet ?? (_pets.isEmpty ? null : _pets.first);
-
+    final state = context.read<HomeCubit>().state;
+    final selectedPet = pet ?? (state.pets.isEmpty ? null : state.pets.first);
     if (selectedPet == null) {
       _showMessage('أضف حيوانًا أليفًا أولًا لعرض تفاصيله.');
       return;
     }
-    final imageBytes = PetImageLocalStorage.instance.getImage(selectedPet.id);
 
+    final imageBytes = state.petImages[selectedPet.id];
     await Navigator.push(
       context,
       MaterialPageRoute(
@@ -159,6 +115,24 @@ class _HomeViewState extends State<_HomeView> {
     Navigator.pushNamed(context, RouteNames.store, arguments: categoryId);
   }
 
+  void _openProduct(ProductModel product) {
+    Navigator.pushNamed(
+      context,
+      RouteNames.productDetails,
+      arguments: product.id,
+    );
+  }
+
+  Future<void> _addProductToCart(ProductModel product) async {
+    final added = await context.read<StoreCubit>().addToCart(product);
+    if (!mounted) return;
+    _showMessage(
+      added
+          ? 'تمت إضافة ${product.name} إلى السلة.'
+          : 'سجّل الدخول أولًا لإضافة المنتج للسلة.',
+    );
+  }
+
   void _showMessage(String message) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -168,7 +142,6 @@ class _HomeViewState extends State<_HomeView> {
   void _scrollToPets() {
     final petsContext = _petsSectionKey.currentContext;
     if (petsContext == null) return;
-
     Scrollable.ensureVisible(
       petsContext,
       duration: const Duration(milliseconds: 350),
@@ -179,454 +152,68 @@ class _HomeViewState extends State<_HomeView> {
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-    final name = user?.displayName?.trim();
+    return BlocListener<HomeCubit, HomeState>(
+      listenWhen: (previous, current) =>
+          previous.errorMessage != current.errorMessage &&
+          current.errorMessage != null,
+      listener: (context, state) => _showMessage(state.errorMessage!),
+      child: BlocBuilder<HomeCubit, HomeState>(
+        builder: (context, state) {
+          final displayName = state.userName.isEmpty
+              ? 'مرحبًا بك'
+              : state.userName;
 
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        key: _scaffoldKey,
-        backgroundColor: const Color(0xFFF8F9FA),
-        drawer: HomeDrawer(
-          userName: name == null || name.isEmpty ? 'مرحبًا بك' : name,
-          email: user?.email,
-          onCategorySelected: (categoryId) =>
-              _openStore(categoryId: categoryId),
-          onProfileTap: () => Navigator.pushNamed(context, RouteNames.profile),
-          onSettingsTap: () => _showMessage('صفحة الإعدادات هتتضاف لاحقًا.'),
-          onFavoritesTap: () =>
-              _showMessage('صفحة المفضلة هتتضاف مع تنفيذ ميزتها.'),
-        ),
-        body: SafeArea(
-          child: RefreshIndicator(
-            color: AppColors.primary,
-            onRefresh: _loadPets,
-            child: CustomScrollView(
-              controller: _scrollController,
-              physics: const AlwaysScrollableScrollPhysics(
-                parent: BouncingScrollPhysics(),
+          return Directionality(
+            textDirection: TextDirection.rtl,
+            child: Scaffold(
+              key: _scaffoldKey,
+              backgroundColor: AppColors.background,
+              drawer: HomeDrawer(
+                userName: displayName,
+                email: state.userEmail,
+                onCategorySelected: (categoryId) =>
+                    _openStore(categoryId: categoryId),
+                onProfileTap: () =>
+                    Navigator.pushNamed(context, RouteNames.profile),
+                onSettingsTap: () =>
+                    _showMessage('صفحة الإعدادات هتتضاف لاحقًا.'),
+                onFavoritesTap: () =>
+                    _showMessage('صفحة المفضلة هتتضاف مع تنفيذ ميزتها.'),
               ),
-              slivers: [
-                SliverPadding(
-                  padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 24.h),
-                  sliver: SliverList.list(
-                    children: [
-                      _header(name),
-                      SizedBox(height: 18.h),
-                      HomeSearchBar(
-                        onTap: () =>
-                            Navigator.pushNamed(context, RouteNames.search),
-                      ),
-                      SizedBox(height: 18.h),
-                      _promotionBanner(),
-                      SizedBox(height: 24.h),
-                      _sectionHeader('خدماتنا السريعة'),
-                      SizedBox(height: 12.h),
-                      _quickServices(),
-                      SizedBox(height: 24.h),
-                      KeyedSubtree(
-                        key: _petsSectionKey,
-                        child: Column(
-                          children: [
-                            _sectionHeader(
-                              'حيواناتك الأليفة',
-                              action: 'عرض الكل',
-                              onAction: _scrollToPets,
-                            ),
-                            SizedBox(height: 12.h),
-                            _petsSection(),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 24.h),
-                      _sectionHeader(
-                        'منتجات مميزة',
-                        action: 'عرض المتجر',
-                        onAction: _openStore,
-                      ),
-                      SizedBox(height: 12.h),
-                      _featuredProducts(),
-                    ],
+              body: SafeArea(
+                child: RefreshIndicator(
+                  color: AppColors.primary,
+                  onRefresh: _loadPets,
+                  child: HomePageContent(
+                    state: state,
+                    petsSectionKey: _petsSectionKey,
+                    onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
+                    onNotificationsTap: () =>
+                        Navigator.pushNamed(context, RouteNames.notifications),
+                    onSearchTap: () =>
+                        Navigator.pushNamed(context, RouteNames.search),
+                    onStoreTap: _openStore,
+                    onVaccinationsTap: () => _openVaccinations(),
+                    onServicesTap: () =>
+                        _showMessage('الخدمات البيطرية ستتوفر قريبًا.'),
+                    onOrdersTap: () =>
+                        Navigator.pushNamed(context, RouteNames.orders),
+                    onAddPetTap: _openAddPet,
+                    onViewAllPetsTap: _scrollToPets,
+                    onPetTap: _openVaccinations,
+                    onProductTap: _openProduct,
+                    onAddToCart: _addProductToCart,
                   ),
                 ),
-              ],
-            ),
-          ),
-        ),
-        bottomNavigationBar: HomeBottomNav(
-          currentIndex: _selectedBottomNavIndex,
-          onTap: _onBottomNavTap,
-        ),
-      ),
-    );
-  }
-
-  Widget _header(String? name) => Row(
-    children: [
-      IconButton.filledTonal(
-        onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-        icon: const Icon(Icons.menu_rounded),
-        tooltip: 'القائمة',
-      ),
-      const SizedBox(width: 8),
-      CircleAvatar(
-        radius: 22,
-        backgroundColor: AppColors.primaryLight,
-        backgroundImage: FirebaseAuth.instance.currentUser?.photoURL == null
-            ? null
-            : NetworkImage(FirebaseAuth.instance.currentUser!.photoURL!),
-        child: FirebaseAuth.instance.currentUser?.photoURL == null
-            ? const Icon(Icons.person_outline, color: AppColors.primaryDark)
-            : null,
-      ),
-      const SizedBox(width: 10),
-      Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'أهلًا بك،',
-              style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
-            ),
-            const Text('أهلًا بك،', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
-            Text(
-              name == null || name.isEmpty ? 'في Vet Care' : name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                color: AppColors.mainText,
               ),
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.mainText),
+              bottomNavigationBar: HomeBottomNav(
+                currentIndex: _selectedBottomNavIndex,
+                onTap: _onBottomNavTap,
+              ),
             ),
-          ],
-        ),
-      ),
-      IconButton(
-        tooltip: 'الإشعارات',
-        onPressed: () {
-          Navigator.pushNamed(context, RouteNames.notifications);
-        },
-        icon: const Icon(
-          Icons.notifications_none_rounded,
-          color: AppColors.primaryDark,
-        ),
-      ),
-    ],
-  );
-
-  Widget _promotionBanner() => Container(
-    width: double.infinity,
-    padding: const EdgeInsets.all(18),
-    decoration: BoxDecoration(
-      gradient: const LinearGradient(
-        colors: [Color(0xFF267D68), Color(0xFF1E6554)],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
-      borderRadius: BorderRadius.circular(20),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'كل احتياجات أليفك في مكان واحد',
-          style: TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        const SizedBox(height: 5),
-        const Text(
-          'منتجات مختارة لرعاية أفضل كل يوم',
-          style: TextStyle(fontSize: 12, color: Color(0xFFE2E8F0)),
-        ),
-        const SizedBox(height: 14),
-        FilledButton(
-          onPressed: _openStore,
-          style: FilledButton.styleFrom(
-            backgroundColor: const Color(0xFFF97316),
-            foregroundColor: Colors.white,
-          ),
-        const Text('كل احتياجات أليفك في مكان واحد', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.white)),
-        const SizedBox(height: 5),
-        const Text('منتجات مختارة لرعاية أفضل كل يوم', style: TextStyle(fontSize: 12, color: Color(0xFFE2E8F0))),
-        const SizedBox(height: 14),
-        FilledButton(
-          onPressed: _openStore,
-          style: FilledButton.styleFrom(backgroundColor: const Color(0xFFF97316), foregroundColor: Colors.white),
-          child: const Text('تسوق الآن'),
-        ),
-      ],
-    ),
-  );
-
-  Widget _quickServices() => Row(
-    children: [
-      _service(
-        'المتجر',
-        Icons.medication_outlined,
-        const Color(0xFFEF4444),
-        const Color(0xFFFFECEF),
-        _openStore,
-      ),
-      _service(
-        'التطعيمات',
-        Icons.verified_user_outlined,
-        const Color(0xFF2563EB),
-        const Color(0xFFEFF6FF),
-        _openVaccinations,
-      ),
-      _service(
-        'الخدمات',
-        Icons.support_agent_outlined,
-        const Color(0xFFF59E0B),
-        const Color(0xFFFEF3C7),
-        () => _showMessage('الخدمات البيطرية ستتوفر قريبًا.'),
-      ),
-      _service(
-        'طلباتي',
-        Icons.local_shipping_outlined,
-        AppColors.primaryDark,
-        AppColors.primaryLight,
-        () => Navigator.pushNamed(context, RouteNames.orders),
-      ),
-      _service('المتجر', Icons.medication_outlined, const Color(0xFFEF4444), const Color(0xFFFFECEF), _openStore),
-      _service('التطعيمات', Icons.verified_user_outlined, const Color(0xFF2563EB), const Color(0xFFEFF6FF), _openVaccinations),
-      _service('الخدمات', Icons.support_agent_outlined, const Color(0xFFF59E0B), const Color(0xFFFEF3C7), () => _showMessage('الخدمات البيطرية ستتوفر قريبًا.')),
-      _service('طلباتي', Icons.local_shipping_outlined, AppColors.primaryDark, AppColors.primaryLight, () => Navigator.pushNamed(context, RouteNames.orders)),
-    ],
-  );
-
-  Widget _service(
-    String title,
-    IconData icon,
-    Color iconColor,
-    Color background,
-    VoidCallback onTap,
-  ) => Expanded(
-    child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: Material(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 3),
-            child: Column(
-              children: [
-                CircleAvatar(
-                  radius: 22,
-                  backgroundColor: background,
-                  child: Icon(icon, color: iconColor, size: 21),
-                ),
-                const SizedBox(height: 7),
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    ),
-  );
-
-  Widget _petsSection() {
-    if (_isLoadingPets) {
-      return const SizedBox(
-        height: 120,
-        child: Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    return ScrollConfiguration(
-      behavior: ScrollConfiguration.of(context).copyWith(
-        dragDevices: {
-          PointerDeviceKind.touch,
-          PointerDeviceKind.mouse,
-          PointerDeviceKind.trackpad,
-          PointerDeviceKind.stylus,
-        },
-      ),
-      child: MyPetsSection(
-        showHeader: false,
-        pets: _pets,
-        onAddTap: _openAddPet,
-        onViewAllTap: _scrollToPets,
-        onPetTap: _openVaccinations,
-        imageBuilder: (pet) {
-          final bytes = PetImageLocalStorage.instance.getImage(pet.id);
-          return bytes == null ? null : MemoryImage(bytes);
-        },
-      ),
-    );
-  }
-
-  Widget _featuredProducts() => BlocBuilder<StoreCubit, StoreState>(
-    builder: (context, state) {
-      if (state.isLoading && state.products.isEmpty) {
-        return const SizedBox(
-          height: 170,
-          child: Center(child: CircularProgressIndicator()),
-        );
-      }
-
-        return const SizedBox(height: 170, child: Center(child: CircularProgressIndicator()));
-      }
-      if (state.products.isEmpty) {
-        return const Padding(
-          padding: EdgeInsets.symmetric(vertical: 18),
-          child: Center(child: Text('المنتجات المميزة ستظهر هنا عند توفرها.')),
-        );
-      }
-
-      return LayoutBuilder(
-        builder: (context, constraints) {
-          final columns = constraints.maxWidth >= 700 ? 4 : 2;
-          final products = state.products.take(4).toList();
-
-          return GridView.builder(
-            itemCount: products.length,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: columns,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-              childAspectRatio: 0.72,
-            ),
-            itemBuilder: (context, index) =>
-                _featuredProductCard(products[index]),
-            itemBuilder: (context, index) => _featuredProductCard(products[index]),
           );
         },
-      );
-    },
-  );
-
-  Widget _featuredProductCard(ProductModel product) => Material(
-    color: Colors.white,
-    borderRadius: BorderRadius.circular(16),
-    clipBehavior: Clip.antiAlias,
-    child: InkWell(
-      onTap: () => Navigator.pushNamed(
-        context,
-        RouteNames.productDetails,
-        arguments: product.id,
       ),
-      onTap: () => Navigator.pushNamed(context, RouteNames.productDetails, arguments: product.id),
-      child: Padding(
-        padding: const EdgeInsets.all(9),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: AppImage(
-                imageUrl: product.imageUrl,
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              product.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    '${product.price} ج.م',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primaryDark,
-                    ),
-                  ),
-                ),
-            Expanded(child: AppImage(imageUrl: product.imageUrl, borderRadius: BorderRadius.circular(12))),
-            const SizedBox(height: 8),
-            Text(product.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(child: Text('${product.price} ج.م', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryDark))),
-                IconButton.filled(
-                  visualDensity: VisualDensity.compact,
-                  onPressed: () => _addProductToCart(context, product),
-                  icon: const Icon(Icons.add_shopping_cart_rounded, size: 17),
-                  tooltip: 'أضف للسلة',
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
-
-  Future<void> _addProductToCart(
-    BuildContext context,
-    ProductModel product,
-  ) async {
-    final added = await context.read<StoreCubit>().addToCart(product);
-
-    if (!mounted) return;
-
-    _showMessage(
-      added
-          ? 'تمت إضافة ${product.name} إلى السلة.'
-          : 'سجّل الدخول أولًا لإضافة المنتج للسلة.',
     );
   }
-
-  Widget _sectionHeader(
-    String title, {
-    String? action,
-    VoidCallback? onAction,
-  }) => Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    children: [
-      Text(
-        title,
-        style: const TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.bold,
-          color: AppColors.mainText,
-        ),
-      ),
-      if (action != null)
-        TextButton(
-          onPressed: onAction,
-          child: Text(
-            action,
-            style: const TextStyle(color: AppColors.primaryDark, fontSize: 12),
-          ),
-        ),
-    ],
-  );
-}
-  Widget _sectionHeader(String title, {String? action, VoidCallback? onAction}) =>
-      Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.mainText)),
-          if (action != null)
-            TextButton(onPressed: onAction, child: Text(action, style: const TextStyle(color: AppColors.primaryDark, fontSize: 12))),
-        ],
-      );
 }

@@ -1,4 +1,3 @@
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -13,6 +12,7 @@ import '../services/notifications/notification_service.dart';
 import '../services/payment/payment_simulator.dart';
 
 import '../../features/pets/data/datasources/pets_remote_data_source.dart';
+import '../../features/pets/data/local/pet_image_local_storage.dart';
 import '../../features/pets/data/repositories/pets_repository.dart';
 import '../../features/pets/presentation/cubit/pets_cubit.dart';
 
@@ -40,6 +40,7 @@ import '../../features/admin/data/datasources/admin_remote_data_source.dart';
 import '../../features/admin/data/repositories/admin_repository.dart';
 import '../../features/admin/presentation/cubit/admin_products_cubit.dart';
 import '../../features/admin/presentation/cubit/admin_orders_cubit.dart';
+import '../../features/home/presentation/cubit/home_cubit.dart';
 
 import '../../features/notifications/data/datasources/notifications_remote_data_source.dart';
 import '../../features/notifications/data/repositories/notifications_repository.dart';
@@ -54,13 +55,13 @@ Future<void> setupDependencies() async {
 
   if (!sl.isRegistered<FirebaseFirestore>()) {
     sl.registerLazySingleton<FirebaseFirestore>(
-          () => FirebaseFirestore.instance,
+      () => FirebaseFirestore.instance,
     );
   }
 
   if (!sl.isRegistered<FirebaseMessaging>()) {
     sl.registerLazySingleton<FirebaseMessaging>(
-          () => FirebaseMessaging.instance,
+      () => FirebaseMessaging.instance,
     );
   }
 
@@ -70,19 +71,19 @@ Future<void> setupDependencies() async {
 
   if (!sl.isRegistered<FirebaseAuthService>()) {
     sl.registerLazySingleton<FirebaseAuthService>(
-          () => FirebaseAuthService(sl<FirebaseAuth>()),
+      () => FirebaseAuthService(sl<FirebaseAuth>()),
     );
   }
 
   if (!sl.isRegistered<FirestoreService>()) {
     sl.registerLazySingleton<FirestoreService>(
-          () => FirestoreService(sl<FirebaseFirestore>()),
+      () => FirestoreService(sl<FirebaseFirestore>()),
     );
   }
 
   if (!sl.isRegistered<NotificationService>()) {
     sl.registerLazySingleton<NotificationService>(
-          () => FcmService(
+      () => FcmService(
         sl<FirebaseMessaging>(),
         sl<FirebaseAuthService>(),
         sl<FirestoreService>(),
@@ -93,7 +94,7 @@ Future<void> setupDependencies() async {
 
   if (!sl.isRegistered<NotificationsRemoteDataSource>()) {
     sl.registerLazySingleton<NotificationsRemoteDataSource>(
-          () => NotificationsRemoteDataSource(
+      () => NotificationsRemoteDataSource(
         sl<FirestoreService>(),
         sl<FirebaseAuthService>(),
       ),
@@ -102,25 +103,25 @@ Future<void> setupDependencies() async {
 
   if (!sl.isRegistered<NotificationsRepository>()) {
     sl.registerLazySingleton<NotificationsRepository>(
-          () => NotificationsRepository(sl<NotificationsRemoteDataSource>()),
+      () => NotificationsRepository(sl<NotificationsRemoteDataSource>()),
     );
   }
 
   if (!sl.isRegistered<NotificationsCubit>()) {
     sl.registerFactory<NotificationsCubit>(
-          () => NotificationsCubit(sl<NotificationsRepository>()),
+      () => NotificationsCubit(sl<NotificationsRepository>()),
     );
   }
 
   if (!sl.isRegistered<PetsRemoteDataSource>()) {
     sl.registerLazySingleton<PetsRemoteDataSource>(
-          () => PetsRemoteDataSource(sl<FirebaseFirestore>()),
+      () => PetsRemoteDataSource(sl<FirebaseFirestore>()),
     );
   }
 
   if (!sl.isRegistered<PetsRepository>()) {
     sl.registerLazySingleton<PetsRepository>(
-          () => PetsRepository(sl<PetsRemoteDataSource>()),
+      () => PetsRepository(sl<PetsRemoteDataSource>()),
     );
   }
 
@@ -128,15 +129,25 @@ Future<void> setupDependencies() async {
     sl.registerFactory<PetsCubit>(() => PetsCubit(sl<PetsRepository>()));
   }
 
+  if (!sl.isRegistered<HomeCubit>()) {
+    sl.registerFactory<HomeCubit>(
+      () => HomeCubit(
+        sl<FirebaseAuth>(),
+        sl<PetsRepository>(),
+        PetImageLocalStorage.instance,
+      ),
+    );
+  }
+
   if (!sl.isRegistered<StoreRemoteDataSource>()) {
     sl.registerLazySingleton<StoreRemoteDataSource>(
-          () => StoreRemoteDataSource(sl<FirebaseFirestore>(), sl<FirebaseAuth>()),
+      () => StoreRemoteDataSource(sl<FirebaseFirestore>(), sl<FirebaseAuth>()),
     );
   }
 
   if (!sl.isRegistered<StoreRepository>()) {
     sl.registerLazySingleton<StoreRepository>(
-          () => StoreRepository(sl<StoreRemoteDataSource>()),
+      () => StoreRepository(sl<StoreRemoteDataSource>()),
     );
   }
 
@@ -146,7 +157,7 @@ Future<void> setupDependencies() async {
 
   if (!sl.isRegistered<ProductDetailsCubit>()) {
     sl.registerFactory<ProductDetailsCubit>(
-          () => ProductDetailsCubit(sl<StoreRepository>()),
+      () => ProductDetailsCubit(sl<StoreRepository>()),
     );
   }
 
@@ -156,13 +167,13 @@ Future<void> setupDependencies() async {
 
   if (!sl.isRegistered<CartRemoteDataSource>()) {
     sl.registerLazySingleton<CartRemoteDataSource>(
-          () => CartRemoteDataSource(sl<FirebaseFirestore>(), sl<FirebaseAuth>()),
+      () => CartRemoteDataSource(sl<FirebaseFirestore>(), sl<FirebaseAuth>()),
     );
   }
 
   if (!sl.isRegistered<CartRepository>()) {
     sl.registerLazySingleton<CartRepository>(
-          () => CartRepository(sl<CartRemoteDataSource>()),
+      () => CartRepository(sl<CartRemoteDataSource>()),
     );
   }
 
@@ -172,13 +183,13 @@ Future<void> setupDependencies() async {
 
   if (!sl.isRegistered<OrdersRemoteDataSource>()) {
     sl.registerLazySingleton<OrdersRemoteDataSource>(
-          () => OrdersRemoteDataSource(sl<FirebaseFirestore>(), sl<FirebaseAuth>()),
+      () => OrdersRemoteDataSource(sl<FirebaseFirestore>(), sl<FirebaseAuth>()),
     );
   }
 
   if (!sl.isRegistered<OrdersRepository>()) {
     sl.registerLazySingleton<OrdersRepository>(
-          () => OrdersRepository(sl<OrdersRemoteDataSource>()),
+      () => OrdersRepository(sl<OrdersRemoteDataSource>()),
     );
   }
 
@@ -192,7 +203,7 @@ Future<void> setupDependencies() async {
 
   if (!sl.isRegistered<CheckoutCubit>()) {
     sl.registerFactory<CheckoutCubit>(
-          () => CheckoutCubit(
+      () => CheckoutCubit(
         sl<OrdersRepository>(),
         sl<PaymentSimulator>(),
         sl<CartRepository>(),
@@ -202,43 +213,43 @@ Future<void> setupDependencies() async {
 
   if (!sl.isRegistered<ProfileRemoteDataSource>()) {
     sl.registerLazySingleton<ProfileRemoteDataSource>(
-          () => ProfileRemoteDataSource(sl<FirebaseAuth>(), sl<FirestoreService>()),
+      () => ProfileRemoteDataSource(sl<FirebaseAuth>(), sl<FirestoreService>()),
     );
   }
 
   if (!sl.isRegistered<ProfileRepository>()) {
     sl.registerLazySingleton<ProfileRepository>(
-          () => ProfileRepository(sl<ProfileRemoteDataSource>()),
+      () => ProfileRepository(sl<ProfileRemoteDataSource>()),
     );
   }
 
   if (!sl.isRegistered<ProfileCubit>()) {
     sl.registerFactory<ProfileCubit>(
-          () => ProfileCubit(sl<ProfileRepository>()),
+      () => ProfileCubit(sl<ProfileRepository>()),
     );
   }
 
   if (!sl.isRegistered<AdminRemoteDataSource>()) {
     sl.registerLazySingleton<AdminRemoteDataSource>(
-          () => AdminRemoteDataSource(sl<FirebaseFirestore>(), sl<FirebaseAuth>()),
+      () => AdminRemoteDataSource(sl<FirebaseFirestore>(), sl<FirebaseAuth>()),
     );
   }
 
   if (!sl.isRegistered<AdminRepository>()) {
     sl.registerLazySingleton<AdminRepository>(
-          () => AdminRepository(sl<AdminRemoteDataSource>()),
+      () => AdminRepository(sl<AdminRemoteDataSource>()),
     );
   }
 
   if (!sl.isRegistered<AdminProductsCubit>()) {
     sl.registerFactory<AdminProductsCubit>(
-          () => AdminProductsCubit(sl<AdminRepository>()),
+      () => AdminProductsCubit(sl<AdminRepository>()),
     );
   }
 
   if (!sl.isRegistered<AdminOrdersCubit>()) {
     sl.registerFactory<AdminOrdersCubit>(
-          () => AdminOrdersCubit(sl<AdminRepository>()),
+      () => AdminOrdersCubit(sl<AdminRepository>()),
     );
   }
 }
